@@ -75,22 +75,22 @@ if True:
     m.fillcontinents('gray', zorder=0)
 
     # plot Romanian data
-    datadir = '/home/behry/workspace/eew/delays/data/reakt_publication'
+    datadir = './data/'
     resultsfn = os.path.join(datadir, 'ptt_ro_6stations.npz')
     plot_ptt(resultsfn, m, vmax=vmax)
 
     # plot Greek data
-    datadir = '/home/behry/workspace/eew/delays/data/reakt_publication'
+    datadir = './data/'
     resultsfn = os.path.join(datadir, 'p_wave_tt_gr.npz')
     plot_ptt(resultsfn, m, vmax=vmax)
 
     # plot Swiss data
-    datadir = '/home/behry/workspace/eew/delays/data/reakt_publication'
+    datadir = './data/'
     resultsfn = os.path.join(datadir, 'ptt_ch_6stations.npz')
     plot_ptt(resultsfn, m, vmax=vmax)
 
     # plot Turkish data
-    datadir = '/home/behry/workspace/eew/delays/data/reakt_publication'
+    datadir = './data/'
     resultsfn = os.path.join(datadir, 'ptt_koeri_6stations.npz')
     plot_ptt(resultsfn, m, vmax=vmax)
 
@@ -103,8 +103,12 @@ if True:
                 ax=ax_ice)
     mi.drawcoastlines(zorder=2)
     mi.fillcontinents('gray', zorder=0)
+    mi.drawmeridians(np.arange(-26, -12, 4), labels=[0, 0, 1, 0],
+                    color='lightgray', linewidth=0.5, zorder=0)
+    mi.drawparallels(np.arange(60, 70, 1), labels=[0, 1, 0, 0],
+                    color='lightgray', linewidth=0.5, zorder=0)
     # plot Iceland data
-    datadir = '/home/behry/workspace/eew/delays/data/reakt_publication/'
+    datadir = './data/'
     resultsfn = os.path.join(datadir, 'ptt_imo_6stations.npz')
     plot_ptt(resultsfn, mi, vmin=vmin, vmax=vmax)
 
@@ -118,8 +122,12 @@ if True:
                 ax=ax_nz)
     mnz.drawcoastlines(zorder=2)
     mnz.fillcontinents('gray', zorder=0)
+    mnz.drawmeridians(np.arange(164, 182, 4), labels=[0, 0, 1, 0],
+                    color='lightgray', linewidth=0.5, zorder=0)
+    mnz.drawparallels(np.arange(-51, -31, 2), labels=[0, 1, 0, 0],
+                    color='lightgray', linewidth=0.5, zorder=0)
     # plot NZ data
-    datadir = '/home/behry/workspace/eew/delays/data/reakt_publication'
+    datadir = './data/'
     resultsfn = os.path.join(datadir, 'p_wave_tt_nz.npz')
     plot_ptt(resultsfn, mnz, vmin=vmin, vmax=vmax)
 
@@ -127,6 +135,6 @@ cax = fig.add_axes([0.2, 0.07, 0.6, 0.02])
 cb = ColorbarBase(cax, cmap=cmap, norm=Normalize(vmin=vmin, vmax=vmax),
                   orientation='horizontal', extend=extend)
 cb.set_label(cb_label)
-fout = 'data/reakt_publication/travel_time_maps_reakt.png'
+fout = 'plots/travel_time_maps_reakt.png'
 fig.savefig(fout, dpi=300, bbox_inches='tight')
 plt.show()
