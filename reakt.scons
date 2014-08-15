@@ -1,13 +1,15 @@
 import matplotlib
 matplotlib.use('WXAgg')
 import wx
+import sys
+sys.path.append('../delays')
 from delayeew import DelayEEW
 import os
 from travel_time_map import travel_time_map
 import matplotlib.pyplot as plt
 import numpy as np
 from sc3vs_envelope_delays import envelope_delays, plot_hist
-
+from magnitude_comparison import plot_mag_comp, plot_mag_map
 
 class StationInfoKOERI:
     def __init__(self):
@@ -31,8 +33,8 @@ class StationInfoKOERI:
 
 
 def p_wave_tt_koeri(target, source, env):
-    datadir = "/home/behry/uni/eew/VS_publication/Turkey/"
-    resultsfn = './data/reakt_publication/ptt_koeri_6stations.npz'
+    datadir = "/media/seagate_expansion_drive/VS_publication/Turkey/"
+    resultsfn = './data/ptt_koeri_6stations.npz'
     stationlist = os.path.join(datadir, 'Stations_Marmara.txt')
     de = DelayEEW()
     if True:
@@ -70,8 +72,8 @@ class StationInfoIMO:
 
 
 def p_wave_tt_imo(target, source, env):
-    datadir = "/home/behry/uni/eew/VS_publication/Iceland/"
-    resultsfn = './data/reakt_publication/ptt_imo_6stations.npz'
+    datadir = "/media/seagate_expansion_drive/VS_publication/Iceland/"
+    resultsfn = './data/ptt_imo_6stations.npz'
     stationlist = os.path.join(datadir, 'Stations_Iceland.txt')
     de = DelayEEW()
     if True:
@@ -109,8 +111,8 @@ class StationInfoRO:
 
 
 def p_wave_tt_ro(target, source, env):
-    datadir = "/home/behry/uni/eew/VS_publication/Romania/traveltimes_NEIP"
-    resultsfn = './data/reakt_publication/ptt_ro_6stations.npz'
+    datadir = "/media/seagate_expansion_drive/VS_publication/Romania/traveltimes_NEIP"
+    resultsfn = './data/ptt_ro_6stations.npz'
     stationlist = os.path.join(datadir, 'Stations_RO.txt')
     de = DelayEEW()
     if False:
@@ -149,8 +151,8 @@ class StationInfoGR:
             self.size += 1
 
 def p_wave_tt_gr(target, source, env):
-    datadir = "/home/behry/uni/eew/VS_publication/Patras"
-    resultsfn = './data/reakt_publication/p_wave_tt_gr.npz'
+    datadir = "/media/seagate_expansion_drive/VS_publication/Patras"
+    resultsfn = './data/p_wave_tt_gr.npz'
     stationlist = os.path.join(datadir, 'GRStations_2.txt')
     de = DelayEEW()
     if True:
@@ -188,8 +190,8 @@ class StationInfoNZ:
             self.size += 1
 
 def p_wave_tt_nz(target, source, env):
-    datadir = "/home/behry/uni/eew/VS_publication/NewZealand"
-    resultsfn = './data/reakt_publication/p_wave_tt_nz.npz'
+    datadir = "/media/seagate_expansion_drive/VS_publication/NewZealand"
+    resultsfn = './data/p_wave_tt_nz.npz'
     stationlist = os.path.join(datadir, 'liste_NZ_StationS.txt')
     de = DelayEEW()
     if False:
@@ -251,7 +253,7 @@ class StationInfoCH:
 
 def p_wave_tt_ch_vp3d(target, source, env):
     datadir = "/home/behry/workspace/eew/database/data/"
-    resultsfn = './data/reakt_publication/ptt_ch_6stations_vp3d.npz'
+    resultsfn = './data/ptt_ch_6stations_vp3d.npz'
     stationlist = os.path.join(datadir, 'stations_ch.txt')
     de = DelayEEW()
     if True:
@@ -266,7 +268,7 @@ def p_wave_tt_ch_vp3d(target, source, env):
 
 def p_wave_tt_ch(target, source, env):
     datadir = "/home/behry/workspace/eew/database/data/"
-    resultsfn = './data/reakt_publication/ptt_ch_6stations.npz'
+    resultsfn = './data/ptt_ch_6stations.npz'
     stationlist = os.path.join(datadir, 'stations_ch.txt')
     de = DelayEEW()
     boxin = (44.5, 49., 5., 13.)
@@ -289,7 +291,7 @@ def p_wave_tt_ch_dp_dist(target, source, env):
     the actual depth distribution.
     """
     datadir = "/home/behry/workspace/eew/database/data/"
-    resultsfn = './data/reakt_publication/p_wave_tt_ch_dp_dist.npz'
+    resultsfn = './data/p_wave_tt_ch_dp_dist.npz'
     stationlist = os.path.join(datadir, 'stations_ch.txt')
     de = DelayEEW()
     if False:
@@ -304,8 +306,8 @@ def p_wave_tt_ch_dp_dist(target, source, env):
     plt.show()
 
 def env_delay_KOERI(target, source, env):
-    fin = '/home/behry/uni/eew/VS_publication/Turkey/envelope-logging-info.log'
-    datadir = '/home/behry/workspace/eew/delays/data/reakt_publication'
+    fin = '/media/seagate_expansion_drive/VS_publication/Turkey/envelope-logging-info.log'
+    datadir = './data/'
     flog = os.path.join(datadir, 'env_delays_koeri.log')
     delayfile = os.path.join(datadir, 'env_delays_koeri.npz')
     stdelayfile = os.path.join(datadir, 'single_station_env_delays_koeri.txt')
@@ -313,54 +315,138 @@ def env_delay_KOERI(target, source, env):
     envelope_delays(fin, flog, delayfile, stdelayfile)
     plot_hist(ch_delays, non_ch_delays, env['fout'])
 
+
+def mag_comp_romania(target, source, env):
+    fin = os.path.join('data', 'event_list_romania.csv')
+    plot_mag_comp(fin, env['fout'], mtype='Mw')
+    box = (41., 50., 18.5, 32., 45.5)
+    lgdx = [30., 29., 30., 31., 29.]
+    lgdy = [42.6, 42., 42., 42., 42.25]
+    meridians = np.arange(20, 32, 2)
+    parallels = np.arange(42, 50, 1)
+    plot_mag_map(fin, env['fout1'], box, lgdx, lgdy, meridians, parallels)
+
+
+def mag_comp_patras(target, source, env):
+    fin = os.path.join('data', 'event_list_patras.csv')
+    plot_mag_comp(fin, env['fout'])
+    box = (33.5, 42.5, 18.5, 27.5, 39)
+    lgdx = [20., 19., 20., 21., 19.]
+    lgdy = [34.6, 34., 34., 34., 34.25]
+    meridians = np.arange(18.5, 27.5, 2)
+    parallels = np.arange(25, 44, 1)
+    plot_mag_map(fin, env['fout1'], box, lgdx, lgdy, meridians, parallels)
+
+def mag_comp_nz(target, source, env):
+    fin = os.path.join('data', 'event_list_nz.csv')
+    plot_mag_comp(fin, env['fout'])
+    box = (-50.5, -32., 164.5, 180.5, -41.25)
+    meridians = np.arange(164, 182, 4)
+    parallels = np.arange(-51, -31, 2)
+    lgdx = [168., 166., 168., 170., 167.]
+    lgdy = [-49.1, -50., -50., -50., -49.65]
+    plot_mag_map(fin, env['fout1'], box, lgdx, lgdy, meridians, parallels)
+
+def mag_comp_ch(target, source, env):
+    fin = os.path.join('data', 'event_list_ch.csv')
+    plot_mag_comp(fin, env['fout'])
+    box = (44., 49.5, 4.5, 13.5, 47.)
+    meridians = np.arange(5, 12, 2)
+    parallels = np.arange(44, 49, 2)
+    lgdx = [6.5, 5.5, 6.5, 7.5, 5.5]
+    lgdy = [45, 44.5, 44.5, 44.5, 44.75]
+    plot_mag_map(fin, env['fout1'], box, lgdx, lgdy, meridians, parallels)
+
+def mag_comp_turkey(target, source, env):
+    fin = os.path.join('data', 'event_list_turkey.csv')
+    plot_mag_comp(fin, env['fout'])
+    box = (39., 43.5, 23.5, 31., 41.)
+    meridians = np.arange(22, 38, 2)
+    parallels = np.arange(34, 44, 1)
+    lgdx = [25., 24., 25., 26., 24]
+    lgdy = [42.9, 42.3, 42.3, 42.3, 42.55 ]
+    plot_mag_map(fin, env['fout1'], box, lgdx, lgdy, meridians, parallels)
+
+
 ##################################################################
 sourcefn = 'reakt.scons'
 
 
 env = Environment(ENV=os.environ,
                   BUILDERS={'do': Builder(action=p_wave_tt_koeri)},
-                  fout='data/reakt_publication/ptt_koeri_6_stations.png')
+                  fout='plots/ptt_koeri_6_stations.png')
 env.do('p_wave_tt_koeri', sourcefn)
 
 env = Environment(ENV=os.environ,
                   BUILDERS={'do': Builder(action=p_wave_tt_imo)},
-                  fout='data/reakt_publication/ptt_imo_6_stations.png')
+                  fout='plots/ptt_imo_6_stations.png')
 env.do('p_wave_tt_imo', sourcefn)
 
 env = Environment(ENV=os.environ,
                   BUILDERS={'do': Builder(action=p_wave_tt_ro)},
-                  fout='data/reakt_publication/ptt_ro_6_stations.png')
+                  fout='plots/ptt_ro_6_stations.png')
 env.do('p_wave_tt_ro', sourcefn)
 
 env = Environment(ENV=os.environ,
                   BUILDERS={'do': Builder(action=p_wave_tt_gr)},
-                  fout='data/reakt_publication/p_wave_tt_gr.png')
+                  fout='plots/p_wave_tt_gr.png')
 env.do('p_wave_tt_gr', sourcefn)
 
 env = Environment(ENV=os.environ,
                   BUILDERS={'do': Builder(action=p_wave_tt_nz)},
-                  fout='data/reakt_publication/p_wave_tt_nz.png')
+                  fout='plots/p_wave_tt_nz.png')
 env.do('p_wave_tt_nz', sourcefn)
 
 env = Environment(ENV=os.environ,
                   BUILDERS={'do': Builder(action=p_wave_tt_ch_vp3d)},
-                  fout='data/reakt_publication/ptt_ch_6_stations_vp3d.png')
+                  fout='plots/ptt_ch_6_stations_vp3d.png')
 env.do('p_wave_tt_ch_vp3d', sourcefn)
 
 env = Environment(ENV=os.environ,
                   BUILDERS={'do': Builder(action=p_wave_tt_ch)},
-                  fout='data/reakt_publication/ptt_ch_6_stations.png')
+                  fout='plots/ptt_ch_6_stations.png')
 env.do('p_wave_tt_ch', sourcefn)
 
 env = Environment(ENV=os.environ,
                   BUILDERS={'do': Builder(action=p_wave_tt_ch_dp_dist)},
-                  fout='data/reakt_publication/p_wave_tt_ch_dp_dist.png')
+                  fout='plots/p_wave_tt_ch_dp_dist.png')
 env.do('p_wave_tt_ch_dp_dist', sourcefn)
 
 env = Environment(ENV=os.environ,
                   BUILDERS={'do': Builder(action=env_delay_KOERI)},
-                  fout='data/reakt_publication/env_delay_KOERI.png')
+                  fout='plots/env_delay_KOERI.png')
 env.do('env_delay_KOERI', sourcefn)
+
+env = Environment(ENV=os.environ,
+                  BUILDERS={'do': Builder(action=mag_comp_romania)},
+                  fout='plots/mag_comp_romania.png',
+                  fout1='plots/mag_comp_map_romania.png')
+env.do('mag_comp_romania', sourcefn)
+
+env = Environment(ENV=os.environ,
+                  BUILDERS={'do': Builder(action=mag_comp_patras)},
+                  fout='plots/mag_comp_patras.png',
+                  fout1='plots/mag_comp_map_patras.png')
+env.do('mag_comp_patras', sourcefn)
+
+env = Environment(ENV=os.environ,
+                  BUILDERS={'do': Builder(action=mag_comp_nz)},
+                  fout='plots/mag_comp_nz.png',
+                  fout1='plots/mag_comp_map_nz.png')
+env.do('mag_comp_nz', sourcefn)
+
+env = Environment(ENV=os.environ,
+                  BUILDERS={'do': Builder(action=mag_comp_ch)},
+                  fout='plots/mag_comp_ch.png',
+                  fout1='plots/mag_comp_map_ch.png')
+env.do('mag_comp_ch', sourcefn)
+
+env = Environment(ENV=os.environ,
+                  BUILDERS={'do': Builder(action=mag_comp_turkey)},
+                  fout='plots/mag_comp_turkey.png',
+                  fout1='plots/mag_comp_map_turkey.png')
+env.do('mag_comp_turkey', sourcefn)
+
 
 
 
