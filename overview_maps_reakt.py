@@ -45,7 +45,7 @@ def plot_at(datafn, bmap, cmap, vmin=0., vmax=15., extend='neither'):
     lat, lon, at = np.loadtxt(datafn, unpack=True, delimiter=',',
                               usecols=(2, 3, 5))
     x, y = bmap(lon, lat)
-    bmap.scatter(x, y, c=at, cmap=cmap,
+    bmap.scatter(x, y, c=at, cmap=cmap, s=30,
                  norm=Normalize(vmin=vmin, vmax=vmax), zorder=1)
 
 def main(traveltime=True, alerttime=False):
@@ -76,7 +76,7 @@ def main(traveltime=True, alerttime=False):
 
     # fig = plt.figure(figsize=(12, 7))
     # without Iceland
-    fig = plt.figure(figsize=(11, 7))
+    fig = plt.figure(figsize=(10, 7))
     ax = fig.add_axes([0.1, 0., .8, 1.0])
 
     # setup albers equal area conic basemap
@@ -88,7 +88,7 @@ def main(traveltime=True, alerttime=False):
         #            resolution='l', projection='aea', \
         #            lat_1=35., lat_2=48, lon_0=20, lat_0=42, ax=ax)
         # without Iceland
-        m = Basemap(width=3500000, height=2000000,
+        m = Basemap(width=3000000, height=1800000,
                     resolution='l', projection='aea', \
                     lat_1=35., lat_2=48, lon_0=20, lat_0=42, ax=ax)
         m.drawmeridians(meridians, labels=[0, 0, 0, 1], color='lightgray',

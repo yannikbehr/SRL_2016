@@ -9,7 +9,8 @@ from travel_time_map import travel_time_map
 import matplotlib.pyplot as plt
 import numpy as np
 from sc3vs_envelope_delays import envelope_delays, plot_hist
-from magnitude_comparison import plot_mag_comp, plot_mag_map
+from magnitude_comparison import plot_mag_comp, plot_mag_map, shallow_deep_mag_comp
+from overview_maps_reakt import main as overview_map
 
 class StationInfoKOERI:
     def __init__(self):
@@ -35,11 +36,11 @@ class StationInfoKOERI:
 def p_wave_tt_koeri(target, source, env):
     datadir = "/media/seagate_expansion_drive/VS_publication/Turkey/"
     resultsfn = './data/ptt_koeri_6stations.npz'
-    stationlist = os.path.join(datadir, 'Stations_Marmara.txt')
+    stationlist = os.path.join(datadir, 'Stations_Turkey.txt')
     de = DelayEEW()
     if True:
         de.compute(stationlist, stationinfo=StationInfoKOERI,
-                   boxin=(36, 43, 24, 33), depth=15, vp=6.5, vs=3.5,
+                   boxin=(33, 43, 24, 40), depth=15, vp=6.5, vs=3.5,
                    nnst=6, nmaps=1, resultsfn=resultsfn)
     cmapname = 'RdBu_r'
     m, fig = travel_time_map(resultsfn, stationlist, stationinfo=StationInfoKOERI,
@@ -318,18 +319,21 @@ def env_delay_KOERI(target, source, env):
 
 def mag_comp_romania(target, source, env):
     fin = os.path.join('data', 'event_list_romania.csv')
-    plot_mag_comp(fin, env['fout'], mtype='Mw')
+    plot_mag_comp(fin, env['fout'], mtype='Ml',
+                  magnitude_correction='0.83*((%s-0.8)/0.74)+0.17',
+                  countryname='Romania')
     box = (41., 50., 18.5, 32., 45.5)
     lgdx = [30., 29., 30., 31., 29.]
     lgdy = [42.6, 42., 42., 42., 42.25]
     meridians = np.arange(20, 32, 2)
     parallels = np.arange(42, 50, 1)
-    plot_mag_map(fin, env['fout1'], box, lgdx, lgdy, meridians, parallels)
+    plot_mag_map(fin, env['fout1'], box, lgdx, lgdy, meridians, parallels,
+                 magnitude_correction='0.83*((%s-0.8)/0.74)+0.17')
 
 
 def mag_comp_patras(target, source, env):
     fin = os.path.join('data', 'event_list_patras.csv')
-    plot_mag_comp(fin, env['fout'])
+    plot_mag_comp(fin, env['fout'], countryname='Patras')
     box = (33.5, 42.5, 18.5, 27.5, 39)
     lgdx = [20., 19., 20., 21., 19.]
     lgdy = [34.6, 34., 34., 34., 34.25]
@@ -339,7 +343,7 @@ def mag_comp_patras(target, source, env):
 
 def mag_comp_nz(target, source, env):
     fin = os.path.join('data', 'event_list_nz.csv')
-    plot_mag_comp(fin, env['fout'])
+    plot_mag_comp(fin, env['fout'], countryname='New Zealand')
     box = (-50.5, -32., 164.5, 180.5, -41.25)
     meridians = np.arange(164, 182, 4)
     parallels = np.arange(-51, -31, 2)
@@ -349,17 +353,19 @@ def mag_comp_nz(target, source, env):
 
 def mag_comp_ch(target, source, env):
     fin = os.path.join('data', 'event_list_ch.csv')
-    plot_mag_comp(fin, env['fout'])
+    plot_mag_comp(fin, env['fout'], magnitude_correction='%s+0.25',
+                  countryname='Switzerland')
     box = (44., 49.5, 4.5, 13.5, 47.)
     meridians = np.arange(5, 12, 2)
     parallels = np.arange(44, 49, 2)
     lgdx = [6.5, 5.5, 6.5, 7.5, 5.5]
     lgdy = [45, 44.5, 44.5, 44.5, 44.75]
-    plot_mag_map(fin, env['fout1'], box, lgdx, lgdy, meridians, parallels)
+    plot_mag_map(fin, env['fout1'], box, lgdx, lgdy, meridians, parallels,
+                 magnitude_correction='%s+0.25')
 
 def mag_comp_turkey(target, source, env):
     fin = os.path.join('data', 'event_list_turkey.csv')
-    plot_mag_comp(fin, env['fout'])
+    plot_mag_comp(fin, env['fout'], countryname='Turkey')
     box = (39., 43.5, 23.5, 31., 41.)
     meridians = np.arange(22, 38, 2)
     parallels = np.arange(34, 44, 1)
@@ -367,6 +373,19 @@ def mag_comp_turkey(target, source, env):
     lgdy = [42.9, 42.3, 42.3, 42.3, 42.55 ]
     plot_mag_map(fin, env['fout1'], box, lgdx, lgdy, meridians, parallels)
 
+
+def maps(target, source, env):
+    overview_map(traveltime=True, alerttime=False)
+    overview_map(traveltime=False, alerttime=True)
+
+def mag_comp_depth(target, source, env):
+    fndict = {'./data/event_list_turkey.csv':None,
+              './data/event_list_nz.csv':None,
+              './data/event_list_ch.csv':'%s+0.25',
+              './data/event_list_romania.csv':'0.83*((%s-0.8)/0.74)+0.17',
+              './data/event_list_patras.csv':None}
+    shallow_deep_mag_comp(fndict, env['fout1'])
+    shallow_deep_mag_comp(fndict, env['fout2'], shallow=False)
 
 ##################################################################
 sourcefn = 'reakt.scons'
@@ -447,7 +466,18 @@ env = Environment(ENV=os.environ,
                   fout1='plots/mag_comp_map_turkey.png')
 env.do('mag_comp_turkey', sourcefn)
 
+env = Environment(ENV=os.environ,
+                  BUILDERS={'do': Builder(action=maps)})
+env.do('maps', sourcefn)
 
+env = Environment(ENV=os.environ,
+                  BUILDERS={'do': Builder(action=mag_comp_depth)},
+                  fout1='plots/shallow_mag_comp.png',
+                  fout2='plots/deep_mag_comp.png')
+env.do('mag_comp_depth', sourcefn)
+
+# env = Environment()
+Depends('all_mag_comp', ['mag_comp_nz', 'mag_comp_ch', 'mag_comp_turkey', 'mag_comp_patras', 'mag_comp_romania'])
 
 
 
