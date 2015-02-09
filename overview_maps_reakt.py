@@ -48,7 +48,7 @@ def plot_at(datafn, bmap, cmap, vmin=0., vmax=15., extend='neither'):
     bmap.scatter(x, y, c=at, cmap=cmap, s=30,
                  norm=Normalize(vmin=vmin, vmax=vmax), zorder=1)
 
-def main(traveltime=True, alerttime=False):
+def main(traveltime=False, alerttime=True):
     lonmin, lonmax, latmin, latmax = 2.5, 37.5, 35.0, 48.0
     dlat = 2.0
     dlon = 2.0
@@ -74,9 +74,9 @@ def main(traveltime=True, alerttime=False):
         cb_label = 'Initial alert time [s]'
 
 
-    # fig = plt.figure(figsize=(12, 7))
+    fig = plt.figure(figsize=(12, 7))
     # without Iceland
-    fig = plt.figure(figsize=(10, 7))
+    # fig = plt.figure(figsize=(10, 7))
     ax = fig.add_axes([0.1, 0., .8, 1.0])
 
     # setup albers equal area conic basemap
@@ -84,13 +84,13 @@ def main(traveltime=True, alerttime=False):
     # lat_2 is second standard parallel.
     # lon_0,lat_0 is central point.
     if True:
-        # m = Basemap(width=4000000, height=2000000,
-        #            resolution='l', projection='aea', \
-        #            lat_1=35., lat_2=48, lon_0=20, lat_0=42, ax=ax)
-        # without Iceland
-        m = Basemap(width=3000000, height=1800000,
+        m = Basemap(width=4000000, height=2000000,
                     resolution='l', projection='aea', \
                     lat_1=35., lat_2=48, lon_0=20, lat_0=42, ax=ax)
+        # without Iceland
+        # m = Basemap(width=3000000, height=1800000,
+        #            resolution='l', projection='aea', \
+        #            lat_1=35., lat_2=48, lon_0=20, lat_0=42, ax=ax)
         m.drawmeridians(meridians, labels=[0, 0, 0, 1], color='lightgray',
                         linewidth=0.5, zorder=0)
         m.drawparallels(parallels, labels=[1, 0, 0, 0], color='lightgray',
@@ -134,7 +134,7 @@ def main(traveltime=True, alerttime=False):
             plot_at(resultsfn, m, cmap, vmin=vmin, vmax=vmax)
 
     # Create an inset for Iceland
-    if False:
+    if True:
         ax_ice = fig.add_axes([0.64, 0.55, .25, .25])
         mi = Basemap(width=550000, height=500000,
                     resolution='l', projection='aea', \
@@ -150,9 +150,11 @@ def main(traveltime=True, alerttime=False):
         if traveltime:
             resultsfn = os.path.join(datadir, 'ptt_imo_6stations.npz')
             plot_ptt(resultsfn, mi, cmap, dlevel, vmin=vmin, vmax=vmax)
-        # if alerttime:
-        #    resultsfn = os.path.join(datadir, 'event_list_.csv')
-        #    plot_at(resultsfn, mi, vmin=vmin, vmax=vmax)
+        if alerttime:
+            resultsfn = os.path.join(datadir, 'event_list_iceland.csv')
+            plot_at(resultsfn, mi, cmap, vmin=vmin, vmax=vmax)
+            resultsfn = os.path.join(datadir, 'event_list_iceland_bardarbunga.csv')
+            plot_at(resultsfn, mi, cmap, vmin=vmin, vmax=vmax)
 
 
     # Create an inset for New Zealand
