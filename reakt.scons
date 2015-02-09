@@ -3,214 +3,224 @@ matplotlib.use('WXAgg')
 import wx
 import sys
 sys.path.append('../delays')
+sys.path.append('../reports')
 from delayeew import DelayEEW
 import os
-from travel_time_map import travel_time_map
+from alerttimemap import AlertTimeMap
 import matplotlib.pyplot as plt
 import numpy as np
 from sc3vs_envelope_delays import envelope_delays, plot_hist
-from magnitude_comparison import plot_mag_comp, plot_mag_map, shallow_deep_mag_comp
+from magnitude_comparison import MagComp
 from overview_maps_reakt import main as overview_map
-
-class StationInfoKOERI:
-    def __init__(self):
-        self.lat = []
-        self.lon = []
-        self.nm = []
-        self.nw = []
-        self.size = 0
-
-    def read(self, statlist, **kargs):
-        fh = open(statlist)
-        # skip header line
-        fh.readline()
-        for line in fh.readlines():
-            a = line.split()
-            self.nw.append(a[0])
-            self.nm.append(a[1])
-            self.lat.append(float(a[4]))
-            self.lon.append(float(a[5]))
-            self.size += 1
+import json
+from point_in_polygon import EventCh
+import ipdb
 
 
-def p_wave_tt_koeri(target, source, env):
-    datadir = "/media/seagate_expansion_drive/VS_publication/Turkey/"
-    resultsfn = './data/ptt_koeri_6stations.npz'
-    stationlist = os.path.join(datadir, 'Stations_Turkey.txt')
-    de = DelayEEW()
-    if True:
-        de.compute(stationlist, stationinfo=StationInfoKOERI,
-                   boxin=(33, 43, 24, 40), depth=15, vp=6.5, vs=3.5,
-                   nnst=6, nmaps=1, resultsfn=resultsfn)
-    cmapname = 'RdBu_r'
-    m, fig = travel_time_map(resultsfn, stationlist, stationinfo=StationInfoKOERI,
-                             scale=True, cmapname=cmapname,
-                             boxin=(36, 43, 24, 33),
-                             boxout=(35.5, 43.5, 23.5, 33.5, 37.5),
-                             meridians=np.arange(22, 32, 2),
-                             parallels=np.arange(34, 42, 1))
-    fig.savefig(env['fout'], dpi=300, bbox_inches='tight')
-    plt.show()
-
-
-class StationInfoIMO:
-    def __init__(self):
-        self.lat = []
-        self.lon = []
-        self.nm = []
-        self.nw = []
-        self.size = 0
-
-    def read(self, statlist, **kargs):
-        fh = open(statlist)
-        for line in fh.readlines():
-            a = line.split(',')
-            self.lat.append(float(a[1]))
-            self.lon.append(float(a[2]))
-            self.nm.append(a[0])
-            self.nw.append('ICE')
-            self.size += 1
-
-
-def p_wave_tt_imo(target, source, env):
-    datadir = "/media/seagate_expansion_drive/VS_publication/Iceland/"
-    resultsfn = './data/ptt_imo_6stations.npz'
-    stationlist = os.path.join(datadir, 'Stations_Iceland.txt')
-    de = DelayEEW()
-    if True:
-        de.compute(stationlist, stationinfo=StationInfoIMO,
-                   boxin=(62, 67, -25, -13), depth=15, vp=6.5, vs=3.5,
-                   nnst=6, nmaps=1, resultsfn=resultsfn)
-    cmapname = 'RdBu_r'
-    m, fig = travel_time_map(resultsfn, stationlist, stationinfo=StationInfoIMO,
-                             scale=True, cmapname=cmapname,
-                             boxin=(62, 67, -25, -13),
-                             boxout=(61.5, 67.5, -25.5, -12.5, 64.5),
-                             meridians=np.arange(-26, -12, 2),
-                             parallels=np.arange(60, 70, 1))
-    fig.savefig(env['fout'], dpi=300, bbox_inches='tight')
-    plt.show()
-
-
-class StationInfoRO:
-    def __init__(self):
-        self.lat = []
-        self.lon = []
-        self.nm = []
-        self.nw = []
-        self.size = 0
-
-    def read(self, statlist, **kargs):
-        fh = open(statlist)
-        for line in fh.readlines():
-            a = line.split()
-            self.lon.append(float(a[0]))
-            self.lat.append(float(a[1]))
-            self.nm.append('DUMMY')
-            self.nw.append('RO')
-            self.size += 1
-
-
-def p_wave_tt_ro(target, source, env):
-    datadir = "/media/seagate_expansion_drive/VS_publication/Romania/traveltimes_NEIP"
-    resultsfn = './data/ptt_ro_6stations.npz'
-    stationlist = os.path.join(datadir, 'Stations_RO.txt')
-    de = DelayEEW()
-    if False:
-        de.compute(stationlist, stationinfo=StationInfoRO,
-                   boxin=(41.5, 49.7, 19, 31.5), depth=25, vp=7.65, vs=4.35,
-                   nnst=6, nmaps=1, resultsfn=resultsfn)
-    cmapname = 'RdBu_r'
-    m, fig = travel_time_map(resultsfn, stationlist, stationinfo=StationInfoRO,
-                             scale=True, cmapname=cmapname,
-                             boxin=(41.5, 49.7, 19, 31.5),
-                             boxout=(41., 50., 18.5, 32., 45.5),
-                             meridians=np.arange(20, 32, 2),
-                             parallels=np.arange(42, 50, 1))
-    fig.savefig(env['fout'], dpi=300, bbox_inches='tight')
-    plt.show()
-
-
-class StationInfoGR:
-    def __init__(self):
-        self.lat = []
-        self.lon = []
-        self.nm = []
-        self.nw = []
-        self.size = 0
-
-    def read(self, statlist, **kargs):
-        fh = open(statlist)
-        for line in fh.readlines():
-            a = line.split()
-            self.nw.append(a[0])
-            self.nm.append(a[1])
-            lat = float(a[4]) + float(a[5]) / 60.
-            lon = float(a[6]) + float(a[7]) / 60.
-            self.lon.append(lon)
-            self.lat.append(lat)
-            self.size += 1
-
-def p_wave_tt_gr(target, source, env):
-    datadir = "/media/seagate_expansion_drive/VS_publication/Patras"
-    resultsfn = './data/p_wave_tt_gr.npz'
-    stationlist = os.path.join(datadir, 'GRStations_2.txt')
-    de = DelayEEW()
-    if True:
-        de.compute(stationlist, stationinfo=StationInfoGR,
-                   boxin=(34, 42, 19, 27), depth=10, vp=6.0, vs=3.6,
-                   nnst=6, nmaps=1, resultsfn=resultsfn)
-    cmapname = 'RdBu_r'
-    m, fig = travel_time_map(resultsfn, stationlist, stationinfo=StationInfoGR,
-                             scale=True, cmapname=cmapname,
-                             boxin=(34., 42., 19., 27.),
-                             boxout=(33.5, 42.5, 18.5, 27.5, 39),
-                             meridians=np.arange(18, 29, 2),
-                             parallels=np.arange(25, 44, 1))
-    fig.savefig(env['fout'], dpi=300, bbox_inches='tight')
-    plt.show()
-
-class StationInfoNZ:
-    def __init__(self):
-        self.lat = []
-        self.lon = []
-        self.nm = []
-        self.nw = []
-        self.size = 0
-
-    def read(self, statlist, **kargs):
-        fh = open(statlist)
-        # skip header
-        fh.readline()
-        for line in fh.readlines():
-            a = line.split(',')
-            self.nw.append('NZ')
-            self.nm.append(a[0])
-            self.lat.append(float(a[4]))
-            self.lon.append(float(a[5]))
-            self.size += 1
-
-def p_wave_tt_nz(target, source, env):
-    datadir = "/media/seagate_expansion_drive/VS_publication/NewZealand"
-    resultsfn = './data/p_wave_tt_nz.npz'
-    stationlist = os.path.join(datadir, 'liste_NZ_StationS.txt')
-    de = DelayEEW()
-    if False:
-        de.compute(stationlist, stationinfo=StationInfoNZ,
-                   boxin=(-50, -32.5, 165, 180), depth=10, vp=6.0, vs=3.6,
-                   nnst=6, nmaps=1, resultsfn=resultsfn, ngp=401)
-    cmapname = 'RdBu_r'
-    m, fig = travel_time_map(resultsfn, stationlist, stationinfo=StationInfoNZ,
-                             scale=True, cmapname=cmapname,
-                             boxin=(-50, -32.5, 165, 180),
-                             boxout=(-50.5, -32., 164.5, 180.5, -41.25),
-                             meridians=np.arange(164, 182, 4),
-                             parallels=np.arange(-51, -31, 2))
-    fig.savefig(env['fout'], dpi=300, bbox_inches='tight')
-    plt.show()
-
-
-class StationInfoCH:
+def PhonyTarget(target, action):
+    phony = Environment(ENV=os.environ, BUILDERS={ 'phony' : Builder(action=action) })
+    AlwaysBuild(phony.phony(target=target, source='reakt.scons'))
+#
+# class StationInfoKOERI:
+#     def __init__(self):
+#         self.lat = []
+#         self.lon = []
+#         self.nm = []
+#         self.nw = []
+#         self.size = 0
+#
+#     def read(self, statlist, **kargs):
+#         fh = open(statlist)
+#         # skip header line
+#         fh.readline()
+#         for line in fh.readlines():
+#             a = line.split()
+#             self.nw.append(a[0])
+#             self.nm.append(a[1])
+#             self.lat.append(float(a[4]))
+#             self.lon.append(float(a[5]))
+#             self.size += 1
+#
+#
+# def p_wave_tt_koeri(target, source, env):
+#     datadir = "/media/seagate_expansion_drive/VS_publication/Turkey/"
+#     resultsfn = './data/ptt_koeri_6stations.npz'
+#     stationlist = os.path.join(datadir, 'Stations_Turkey.txt')
+#     de = DelayEEW()
+#     if True:
+#         de.compute(stationlist, stationinfo=StationInfoKOERI,
+#                    boxin=(33, 43, 24, 40), depth=15, vp=6.5, vs=3.5,
+#                    nnst=6, nmaps=1, resultsfn=resultsfn)
+#     cmapname = 'RdBu_r'
+#     m, fig = travel_time_map(resultsfn, stationlist, stationinfo=StationInfoKOERI,
+#                              scale=True, cmapname=cmapname,
+#                              boxin=(36, 43, 24, 33),
+#                              boxout=(35.5, 43.5, 23.5, 33.5, 37.5),
+#                              meridians=np.arange(22, 32, 2),
+#                              parallels=np.arange(34, 42, 1))
+#     fig.savefig(env['fout'], dpi=300, bbox_inches='tight')
+#     plt.show()
+#
+#
+# class StationInfoIMO:
+#     def __init__(self):
+#         self.lat = []
+#         self.lon = []
+#         self.nm = []
+#         self.nw = []
+#         self.size = 0
+#
+#     def read(self, statlist, **kargs):
+#         fh = open(statlist)
+#         for line in fh.readlines():
+#             a = line.split(',')
+#             self.lat.append(float(a[1]))
+#             self.lon.append(float(a[2]))
+#             self.nm.append(a[0])
+#             self.nw.append('ICE')
+#             self.size += 1
+#
+#
+# def p_wave_tt_imo(target, source, env):
+#     datadir = "/media/seagate_expansion_drive/VS_publication/Iceland/"
+#     resultsfn = './data/ptt_imo_6stations.npz'
+#     stationlist = os.path.join(datadir, 'Stations_Iceland_update.txt')
+#     de = DelayEEW()
+#     if True:
+#         de.compute(stationlist, stationinfo=StationInfoIMO,
+#                    boxin=(62, 67, -25, -13), depth=15, vp=6.5, vs=3.5,
+#                    nnst=6, nmaps=1, resultsfn=resultsfn)
+#     cmapname = 'RdBu_r'
+#     m, fig = travel_time_map(resultsfn, stationlist, stationinfo=StationInfoIMO,
+#                              scale=True, cmapname=cmapname,
+#                              boxin=(62, 67, -25, -13),
+#                              boxout=(61.5, 67.5, -25.5, -12.5, 64.5),
+#                              meridians=np.arange(-26, -12, 2),
+#                              parallels=np.arange(60, 70, 1))
+#     fig.savefig(env['fout'], dpi=300, bbox_inches='tight')
+#     plt.show()
+#
+#
+# class StationInfoRO:
+#     def __init__(self):
+#         self.lat = []
+#         self.lon = []
+#         self.nm = []
+#         self.nw = []
+#         self.size = 0
+#
+#     def read(self, statlist, **kargs):
+#         fh = open(statlist)
+#         for line in fh.readlines():
+#             a = line.split()
+#             self.lon.append(float(a[0]))
+#             self.lat.append(float(a[1]))
+#             self.nm.append('DUMMY')
+#             self.nw.append('RO')
+#             self.size += 1
+#
+#
+# def p_wave_tt_ro(target, source, env):
+#     datadir = "/media/seagate_expansion_drive/VS_publication/Romania/traveltimes_NEIP"
+#     resultsfn = './data/ptt_ro_6stations.npz'
+#     stationlist = os.path.join(datadir, 'Stations_RO.txt')
+#     de = DelayEEW()
+#     if False:
+#         de.compute(stationlist, stationinfo=StationInfoRO,
+#                    boxin=(41.5, 49.7, 19, 31.5), depth=25, vp=7.65, vs=4.35,
+#                    nnst=6, nmaps=1, resultsfn=resultsfn)
+#     cmapname = 'RdBu_r'
+#     m, fig = travel_time_map(resultsfn, stationlist, stationinfo=StationInfoRO,
+#                              scale=True, cmapname=cmapname,
+#                              boxin=(41.5, 49.7, 19, 31.5),
+#                              boxout=(41., 50., 18.5, 32., 45.5),
+#                              meridians=np.arange(20, 32, 2),
+#                              parallels=np.arange(42, 50, 1))
+#     fig.savefig(env['fout'], dpi=300, bbox_inches='tight')
+#     plt.show()
+#
+#
+# class StationInfoGR:
+#     def __init__(self):
+#         self.lat = []
+#         self.lon = []
+#         self.nm = []
+#         self.nw = []
+#         self.size = 0
+#
+#     def read(self, statlist, **kargs):
+#         fh = open(statlist)
+#         for line in fh.readlines():
+#             a = line.split()
+#             self.nw.append(a[0])
+#             self.nm.append(a[1])
+#             lat = float(a[4]) + float(a[5]) / 60.
+#             lon = float(a[6]) + float(a[7]) / 60.
+#             self.lon.append(lon)
+#             self.lat.append(lat)
+#             self.size += 1
+#
+# def p_wave_tt_gr(target, source, env):
+#     datadir = "/media/seagate_expansion_drive/VS_publication/Patras"
+#     resultsfn = './data/p_wave_tt_gr.npz'
+#     stationlist = os.path.join(datadir, 'GRStations_2.txt')
+#     de = DelayEEW()
+#     if True:
+#         de.compute(stationlist, stationinfo=StationInfoGR,
+#                    boxin=(34, 42, 19, 27), depth=10, vp=6.0, vs=3.6,
+#                    nnst=6, nmaps=1, resultsfn=resultsfn)
+#     cmapname = 'RdBu_r'
+#     m, fig = travel_time_map(resultsfn, stationlist, stationinfo=StationInfoGR,
+#                              scale=True, cmapname=cmapname,
+#                              boxin=(34., 42., 19., 27.),
+#                              boxout=(33.5, 42.5, 18.5, 27.5, 39),
+#                              meridians=np.arange(18, 29, 2),
+#                              parallels=np.arange(25, 44, 1))
+#     fig.savefig(env['fout'], dpi=300, bbox_inches='tight')
+#     plt.show()
+#
+# class StationInfoNZ:
+#     def __init__(self):
+#         self.lat = []
+#         self.lon = []
+#         self.nm = []
+#         self.nw = []
+#         self.size = 0
+#
+#     def read(self, statlist, **kargs):
+#         fh = open(statlist)
+#         # skip header
+#         fh.readline()
+#         for line in fh.readlines():
+#             a = line.split(',')
+#             self.nw.append('NZ')
+#             self.nm.append(a[0])
+#             self.lat.append(float(a[4]))
+#             self.lon.append(float(a[5]))
+#             self.size += 1
+#
+# def p_wave_tt_nz(target, source, env):
+#     datadir = "/media/seagate_expansion_drive/VS_publication/NewZealand"
+#     resultsfn = './data/p_wave_tt_nz.npz'
+#     stationlist = os.path.join(datadir, 'liste_NZ_StationS.txt')
+#     de = DelayEEW()
+#     if False:
+#         de.compute(stationlist, stationinfo=StationInfoNZ,
+#                    boxin=(-50, -32.5, 165, 180), depth=10, vp=6.0, vs=3.6,
+#                    nnst=6, nmaps=1, resultsfn=resultsfn, ngp=401)
+#     cmapname = 'RdBu_r'
+#     m, fig = travel_time_map(resultsfn, stationlist, stationinfo=StationInfoNZ,
+#                              scale=True, cmapname=cmapname,
+#                              boxin=(-50, -32.5, 165, 180),
+#                              boxout=(-50.5, -32., 164.5, 180.5, -41.25),
+#                              meridians=np.arange(164, 182, 4),
+#                              parallels=np.arange(-51, -31, 2))
+#     fig.savefig(env['fout'], dpi=300, bbox_inches='tight')
+#     plt.show()
+#
+#
+# Load station information for Switzerland
+class NetworkInfoCH:
 
     def __init__(self):
         self.lat = []
@@ -219,18 +229,12 @@ class StationInfoCH:
         self.nw = []
         self.nm = []
         self.lc = []
-        self.excludes = ['CH.TUE', 'CH.SEMOS', 'CH.BHN07', 'CH.BHW05', 'CH.ILULI', 'CH.DAGMA', 'CH.SVAM',
-'CH.BIBA', 'CH.SCEL', 'CH.SIOV', 'CH.SKAF', 'CH.SMUK', 'CH.SMUR', 'CH.SMZW', 'CH.SRHB',
-'CH.STAF', 'CH.STSP', 'CH.SZER', 'CH.SVIL', 'CH.SVIO', 'CH.SVIT', 'CH.SGRA', 'CH.SNIB',
-'CH.SRER', 'CH.SYVP', 'CH.SOLB', 'CH.SOLZ', 'CH.STGK', 'CH.SMAO', 'CH.SZUZ', 'CH.SLOP',
-'CH.SBERN', 'CH.KULLO', 'CH.NUUG', 'CH.BHE01', 'CH.BHE02', 'CH.BHE03', 'CH.BHE04',
-'CH.BHE05', 'CH.BHE06', 'CH.BHE07', 'CH.BHE08', 'CH.BHE09', 'CH.BHE10',
-'CH.BHE11', 'CH.BHE12', 'CH.BHE13', 'CH.BHE14', 'CH.BHN01', 'CH.BHN02', 'CH.BHN03',
-'CH.BHN04', 'CH.BHN05', 'CH.BHN06', 'CH.BHN08', 'CH.BHW01', 'CH.BHW02', 'CH.BHW03',
-'CH.BHW03', 'CH.BHW04', 'CH.BHW06', 'CH.BHW07', 'CH.BHW08', 'CH.BHW10', 'CH.BHW11',
-'CH.BHW12', 'CH.BHW13', 'CH.BHW14', 'CH.BHW15', 'CH.BHW16', 'CH.STBO', 'CH.STFL']
-# ['RA.OGSI', 'RA.STBO', 'RA.STFL']
+        self.excludes = ['RA.OGSI', 'RA.STBO', 'RA.STFL']
         self.size = 0
+        self.networks = {}
+        self.networks['ch'] = {'lat': [], 'lon': [], 'chn': [],
+                               'nw': [], 'nm': [], 'lc': [],
+                               'color':'white', 'label':''}
 
     def read(self, fn, sm=True):
         f = open(fn, 'r')
@@ -242,242 +246,455 @@ class StationInfoCH:
             ns = '%s.%s' % (nt, st)
             if ns in self.excludes:
                 continue
-            if ns not in self.nm:
-                self.nm.append(ns)
-                self.nw.append(nt)
-                self.chn.append(chn)
-                self.lc.append(loc)
-                self.lat.append(float(lat))
-                self.lon.append(float(lon))
+            if ns not in self.networks['ch']['nm']:
+                self.networks['ch']['nm'].append(ns)
+                self.networks['ch']['nw'].append(nt)
+                self.networks['ch']['chn'].append(chn)
+                self.networks['ch']['lc'].append(loc)
+                self.networks['ch']['lat'].append(float(lat))
+                self.networks['ch']['lon'].append(float(lon))
                 self.size += 1
         f.close()
 
-def p_wave_tt_ch_vp3d(target, source, env):
-    datadir = "/home/behry/workspace/eew/database/data/"
-    resultsfn = './data/ptt_ch_6stations_vp3d.npz'
-    stationlist = os.path.join(datadir, 'stations_ch.txt')
-    de = DelayEEW()
-    if True:
-        de.compute(stationlist, stationinfo=StationInfoCH,
-                   nnst=6, nmaps=1, resultsfn=resultsfn, vp3d=True,
-                   sm=True)
-    cmapname = 'RdBu_r'
-    m, fig = travel_time_map(resultsfn, stationlist, stationinfo=StationInfoCH,
-                             scale=True, cmapname=cmapname, sm=True, interactive=True)
-    fig.savefig(env['fout'], dpi=300, bbox_inches='tight')
-    plt.show()
+    def get_networks(self):
+        return self.networks
 
+
+class DelayObs:
+    """
+    Dummy class to load processing latencies.
+    """
+    def __init__(self):
+        self.datadir = "/home/behry/workspace/eew/delays/data"
+        self.pkdelfn = os.path.join(self.datadir,
+                                    'single_station_pk_delays_ch.txt')
+        self.envdelfn = os.path.join(self.datadir,
+                                     'single_station_env_delays_ch.txt')
+        self.octdelfn = os.path.join(self.datadir,
+                                     'origin_estimation_delay_ch.npz')
+        self.magdelfn = os.path.join(self.datadir,
+                                     'magnitude_estimation_delay.npz')
+
+    def load(self, perstation=False):
+        # envelopes
+        fh = open(self.envdelfn)
+        self.envdel = json.load(fh)
+        fh.close()
+        delays = []
+        for st in self.envdel.keys():
+            if perstation:
+                delays.append(np.median(self.envdel[st]))
+            else:
+                delays += self.envdel[st]
+        self.envdefault = np.median(delays)
+
+        # picks
+        fh = open(self.pkdelfn)
+        self.pkdel = json.load(fh)
+        fh.close()
+        delays = []
+        for st in self.pkdel.keys():
+            if perstation:
+                delays.append(np.median(self.pkdel[st]))
+            else:
+                delays += self.pkdel[st]
+        self.pkdefault = np.median(delays)
+
+        # associator
+        a = np.load(self.octdelfn)
+        self.ascdel = a['delays']
+
+        # magnitude
+        a = np.load(self.magdelfn)
+        self.magdel = a['delays']
+
+    def get_pick_delays(self):
+        return self.pkdel
+
+    def get_pick_default(self):
+        return self.pkdefault
+
+    def get_envelope_default(self):
+        return self.envdefault
+
+    def get_envelope_delays(self):
+        return self.envdel
+
+    def get_associator_delays(self):
+        return self.ascdel
+
+    def get_magnitude_delays(self):
+        return self.magdel
+
+class DelayObsOpt:
+    """
+    Return optimal delays.
+    """
+
+    def __init__(self, networkinfo, nsamples):
+        self.stations = []
+        self.pkdel = {}
+        self.envdel = {}
+        self.ascdel = {}
+        self.magdel = {}
+        for _nt in networkinfo.networks.keys():
+            self.stations += networkinfo.networks[_nt]['nm']
+        for _st in self.stations:
+            self.pkdel[_st] = 2.0 * np.random.random_sample(nsamples) + 0.1
+            self.envdel[_st] = 2.0 * np.random.random_sample(nsamples) + 0.1
+        self.ascdel = np.random.normal(0.7, 0.5, nsamples)
+        self.magdel = np.random.normal(0.7, 0.5, nsamples)
+        self.pkdefault = np.median(2.0 * np.random.random_sample(nsamples) + 0.1)
+        self.envdefault = np.median(2.0 * np.random.random_sample(nsamples) + 0.1)
+
+    def load(self):
+        pass
+
+    def get_pick_delays(self):
+        return self.pkdel
+
+    def get_pick_default(self):
+        return self.pkdefault
+
+    def get_envelope_default(self):
+        return self.envdefault
+
+    def get_envelope_delays(self):
+        return self.envdel
+
+    def get_associator_delays(self):
+        return self.ascdel
+
+    def get_magnitude_delays(self):
+        return self.magdel
+
+
+# def p_wave_tt_ch_vp3d(target, source, env):
+#     datadir = "/home/behry/workspace/eew/database/data/"
+#     resultsfn = './data/ptt_ch_6stations_vp3d.npz'
+#     stationlist = os.path.join(datadir, 'stations_ch.txt')
+#     de = DelayEEW()
+#     if True:
+#         de.compute(stationlist, stationinfo=StationInfoCH,
+#                    nnst=6, nmaps=1, resultsfn=resultsfn, vp3d=True,
+#                    sm=True)
+#     cmapname = 'RdBu_r'
+#     m, fig = travel_time_map(resultsfn, stationlist, stationinfo=StationInfoCH,
+#                              scale=True, cmapname=cmapname, sm=True, interactive=True)
+#     fig.savefig(env['fout'], dpi=300, bbox_inches='tight')
+#     plt.show()
+#
 def p_wave_tt_ch(target, source, env):
     datadir = "/home/behry/workspace/eew/database/data/"
-    resultsfn = './data/ptt_ch_6stations.npz'
+    resultsfn = './data/ptt_ch_6stations_test.npz'
     stationlist = os.path.join(datadir, 'stations_ch.txt')
     de = DelayEEW()
     boxin = (44.5, 49., 5., 13.)
     boxout = (44., 49.5, 4.5, 13.5, 47.)
+    latmin, latmax, lonmin, lonmax = boxin
+    lat = np.linspace(latmin, latmax, 201)
+    lon = np.linspace(lonmin, lonmax, 201)
+    dep = np.array([8.0])
+    mlat, mlon, mdep = np.meshgrid(lat, lon, dep)
+    ni = NetworkInfoCH()
+    ni.read(stationlist, sm=True)
+    do = DelayObs()
+    do.load()
     if True:
-        de.compute(stationlist, boxin=boxin,
-                   stationinfo=StationInfoCH,
-                   nnst=6, nmaps=1, resultsfn=resultsfn, vp3d=False,
-                   sm=True)
-    cmapname = 'RdBu_r'
-    m, fig = travel_time_map(resultsfn, stationlist, stationinfo=StationInfoCH,
-                             boxin=boxin, boxout=boxout,
-                             scale=True, cmapname=cmapname, sm=True, interactive=True)
-    fig.savefig(env['fout'], dpi=300, bbox_inches='tight')
+        de.compute(ni, mlon, mlat, mdep, vp=6.5, vs=3.5, nnst=6,
+                   procdelay=False, target=None, nmaps=1,
+                   resultsfn=resultsfn, vp3d=False, latencies=do)
+    fig = plt.figure(figsize=(10, 10))
+    ax = fig.add_axes([0.08, 0.35, 0.8, 0.6])
+
+    am = AlertTimeMap(resultsfn)
+    am.plot2D(fig, ax, procdelay=False, geofilter=None, scale=True)
+    am.plot_stations(fig, ax, ni)
+    # ax_lb = fig.add_axes([0.035, 0.05, 0.43, 0.25])
+    # ax_ub = fig.add_axes([0.49, 0.05, 0.43, 0.25])
+    # cax = fig.add_axes([0.92, 0.1, 0.02, 0.8])
+    # am.error_plot(ax_lb,ax_ub,cax)
+    # m, fig = travel_time_map(resultsfn, ni, boxin=boxin, boxout=boxout,
+    #                        scale=True, cmapname=cmapname, sm=True, interactive=True)
+    # fig.savefig(env['fout'], dpi=300, bbox_inches='tight')
     plt.show()
 
-def p_wave_tt_ch_dp_dist(target, source, env):
-    """
-    Don't use a constant depth anymore but a distribution of depths that mimic
-    the actual depth distribution.
-    """
+def event_alert_times_ch(target, source, env):
     datadir = "/home/behry/workspace/eew/database/data/"
-    resultsfn = './data/p_wave_tt_ch_dp_dist.npz'
+    datafn = './data/event_list_ch.csv'
+    resultsfn = './data/event_alert_times_ch.npz'
+    resultsfn1 = './data/ptt_ch_6stations_test.npz'
+    resultsfn2 = '../delays/data/p_wave_tt_6_stations_ch_sm_procdel_mod.npz'
     stationlist = os.path.join(datadir, 'stations_ch.txt')
+    lat, lon, dep = np.loadtxt(datafn, unpack=True, delimiter=',',
+                               usecols=(2, 3, 4))
     de = DelayEEW()
+    boxout = (44., 49.5, 4.5, 13.5, 47.)
+    ni = NetworkInfoCH()
+    ni.read(stationlist, sm=True)
+    # do = DelayObs()
+    do = DelayObsOpt(ni, 1000)
+    do.load()
+    if True:
+        de.compute(ni, lon, lat, dep, vp=6.5, vs=3.5, nnst=3,
+                   procdelay=True, target=None, nmaps=500,
+                   resultsfn=resultsfn, vp3d=False, latencies=do)
     if False:
-        de.compute(stationlist, stationinfo=StationInfoCH,
-                   nnst=6, nmaps=500, resultsfn=resultsfn, vp3d=False,
-                   sm=True)
-    cmapname = 'RdBu_r'
-    m, fig, ax, mlb, mub, fig_e, ax_lb, ax_ub = \
-    travel_time_map(resultsfn, stationlist, stationinfo=StationInfoCH,
-                    scale=True, cmapname=cmapname, sm=True, error=True)
-    fig.savefig(env['fout'], dpi=300, bbox_inches='tight')
+        de.compute(ni, lon, lat, dep, vp=6.5, vs=3.5, nnst=6,
+                   procdelay=False, target=None, nmaps=1,
+                   resultsfn=resultsfn, vp3d=False, latencies=do)
+    if False:
+        # Compare alert times quantitatively for validation
+        a1 = np.load(resultsfn)
+        a2 = np.load(resultsfn2)
+        lat1 = a1['lat']
+        lon1 = a1['lon']
+        ttP1 = a1['ttP']
+        lat2 = a2['lat']
+        lon2 = a2['lon']
+        ttP2 = a2['ttP']
+        from scipy.spatial import KDTree
+        tree = KDTree(zip(lat2.ravel(), lon2.ravel()))
+        adiff = []
+        for _lt, _ln, _at in zip(lat1, lon1, np.median(ttP1, axis=0)):
+            dist, idx = tree.query((_lt, _ln))
+            row, col = divmod(idx, lat2.shape[1])
+            print _lt, _ln, lat2[row, col, 0], lon2[row, col, 0], np.median(ttP2[:, :, :, 0], axis=0)[row, col], _at
+            adiff.append(np.median(ttP2[:, :, :, 0], axis=0)[row, col] - _at)
+        plt.hist(adiff)
+
+
+    fig = plt.figure(figsize=(10, 10))
+    ax = fig.add_axes([0.08, 0.35, 0.8, 0.6])
+    am1 = AlertTimeMap(resultsfn2)
+    am1.plot2D(fig, ax, procdelay=True, scale=True)
+    am = AlertTimeMap(resultsfn)
+    am.plot1D(fig, ax, vmin=6, vmax=25)
+    am.plot_stations(fig, ax, ni)
     plt.show()
 
-def env_delay_KOERI(target, source, env):
-    fin = '/media/seagate_expansion_drive/VS_publication/Turkey/envelope-logging-info.log'
-    datadir = './data/'
-    flog = os.path.join(datadir, 'env_delays_koeri.log')
-    delayfile = os.path.join(datadir, 'env_delays_koeri.npz')
-    stdelayfile = os.path.join(datadir, 'single_station_env_delays_koeri.txt')
-    ch_delays, non_ch_delays = \
-    envelope_delays(fin, flog, delayfile, stdelayfile)
-    plot_hist(ch_delays, non_ch_delays, env['fout'])
-
-
-def mag_comp_romania(target, source, env):
-    fin = os.path.join('data', 'event_list_romania.csv')
-    plot_mag_comp(fin, env['fout'], mtype='Ml',
-                  magnitude_correction='0.83*((%s-0.8)/0.74)+0.17',
-                  countryname='Romania')
-    box = (41., 50., 18.5, 32., 45.5)
-    lgdx = [30., 29., 30., 31., 29.]
-    lgdy = [42.6, 42., 42., 42., 42.25]
-    meridians = np.arange(20, 32, 2)
-    parallels = np.arange(42, 50, 1)
-    plot_mag_map(fin, env['fout1'], box, lgdx, lgdy, meridians, parallels,
-                 magnitude_correction='0.83*((%s-0.8)/0.74)+0.17')
-
-
-def mag_comp_patras(target, source, env):
-    fin = os.path.join('data', 'event_list_patras.csv')
-    plot_mag_comp(fin, env['fout'], countryname='Patras')
-    box = (33.5, 42.5, 18.5, 27.5, 39)
-    lgdx = [20., 19., 20., 21., 19.]
-    lgdy = [34.6, 34., 34., 34., 34.25]
-    meridians = np.arange(18.5, 27.5, 2)
-    parallels = np.arange(25, 44, 1)
-    plot_mag_map(fin, env['fout1'], box, lgdx, lgdy, meridians, parallels)
-
-def mag_comp_nz(target, source, env):
-    fin = os.path.join('data', 'event_list_nz.csv')
-    plot_mag_comp(fin, env['fout'], countryname='New Zealand')
-    box = (-50.5, -32., 164.5, 180.5, -41.25)
-    meridians = np.arange(164, 182, 4)
-    parallels = np.arange(-51, -31, 2)
-    lgdx = [168., 166., 168., 170., 167.]
-    lgdy = [-49.1, -50., -50., -50., -49.65]
-    plot_mag_map(fin, env['fout1'], box, lgdx, lgdy, meridians, parallels)
-
-def mag_comp_ch(target, source, env):
-    fin = os.path.join('data', 'event_list_ch.csv')
-    plot_mag_comp(fin, env['fout'], magnitude_correction='%s+0.25',
-                  countryname='Switzerland')
-    box = (44., 49.5, 4.5, 13.5, 47.)
-    meridians = np.arange(5, 12, 2)
-    parallels = np.arange(44, 49, 2)
-    lgdx = [6.5, 5.5, 6.5, 7.5, 5.5]
-    lgdy = [45, 44.5, 44.5, 44.5, 44.75]
-    plot_mag_map(fin, env['fout1'], box, lgdx, lgdy, meridians, parallels,
-                 magnitude_correction='%s+0.25')
-
-def mag_comp_turkey(target, source, env):
-    fin = os.path.join('data', 'event_list_turkey.csv')
-    plot_mag_comp(fin, env['fout'], countryname='Turkey')
-    box = (39., 43.5, 23.5, 31., 41.)
-    meridians = np.arange(22, 38, 2)
-    parallels = np.arange(34, 44, 1)
-    lgdx = [25., 24., 25., 26., 24]
-    lgdy = [42.9, 42.3, 42.3, 42.3, 42.55 ]
-    plot_mag_map(fin, env['fout1'], box, lgdx, lgdy, meridians, parallels)
-
-
-def maps(target, source, env):
-    overview_map(traveltime=True, alerttime=False)
-    overview_map(traveltime=False, alerttime=True)
-
-def mag_comp_depth(target, source, env):
-    fndict = {'./data/event_list_turkey.csv':None,
-              './data/event_list_nz.csv':None,
-              './data/event_list_ch.csv':'%s+0.25',
-              './data/event_list_romania.csv':'0.83*((%s-0.8)/0.74)+0.17',
-              './data/event_list_patras.csv':None}
-    shallow_deep_mag_comp(fndict, env['fout1'])
-    shallow_deep_mag_comp(fndict, env['fout2'], shallow=False)
-
+# def p_wave_tt_ch_dp_dist(target, source, env):
+#     """
+#     Don't use a constant depth anymore but a distribution of depths that mimic
+#     the actual depth distribution.
+#     """
+#     datadir = "/home/behry/workspace/eew/database/data/"
+#     resultsfn = './data/p_wave_tt_ch_dp_dist.npz'
+#     stationlist = os.path.join(datadir, 'stations_ch.txt')
+#     de = DelayEEW()
+#     if False:
+#         de.compute(stationlist, stationinfo=StationInfoCH,
+#                    nnst=6, nmaps=500, resultsfn=resultsfn, vp3d=False,
+#                    sm=True)
+#     cmapname = 'RdBu_r'
+#     m, fig, ax, mlb, mub, fig_e, ax_lb, ax_ub = \
+#     travel_time_map(resultsfn, stationlist, stationinfo=StationInfoCH,
+#                     scale=True, cmapname=cmapname, sm=True, error=True)
+#     fig.savefig(env['fout'], dpi=300, bbox_inches='tight')
+#     plt.show()
+#
+# def env_delay_KOERI(target, source, env):
+#     fin = '/media/seagate_expansion_drive/VS_publication/Turkey/envelope-logging-info.log'
+#     datadir = './data/'
+#     flog = os.path.join(datadir, 'env_delays_koeri.log')
+#     delayfile = os.path.join(datadir, 'env_delays_koeri.npz')
+#     stdelayfile = os.path.join(datadir, 'single_station_env_delays_koeri.txt')
+#     ch_delays, non_ch_delays = \
+#     envelope_delays(fin, flog, delayfile, stdelayfile)
+#     plot_hist(ch_delays, non_ch_delays, env['fout'])
+#
+#
+# def mag_comp_romania(target, source, env):
+#     fin = os.path.join('data', 'event_list_romania.csv')
+#     plot_mag_comp(fin, env['fout'], mtype='Ml',
+#                   magnitude_correction='0.83*((%s-0.8)/0.74)+0.17',
+#                   countryname='Romania')
+#     box = (41., 50., 18.5, 32., 45.5)
+#     lgdx = [30., 29., 30., 31., 29.]
+#     lgdy = [42.6, 42., 42., 42., 42.25]
+#     meridians = np.arange(20, 32, 2)
+#     parallels = np.arange(42, 50, 1)
+#     plot_mag_map(fin, env['fout1'], box, lgdx, lgdy, meridians, parallels,
+#                  magnitude_correction='0.83*((%s-0.8)/0.74)+0.17')
+#
+#
+# def mag_comp_patras(target, source, env):
+#     fin = os.path.join('data', 'event_list_patras.csv')
+#     plot_mag_comp(fin, env['fout'], countryname='Patras')
+#     box = (33.5, 42.5, 18.5, 27.5, 39)
+#     lgdx = [20., 19., 20., 21., 19.]
+#     lgdy = [34.6, 34., 34., 34., 34.25]
+#     meridians = np.arange(18.5, 27.5, 2)
+#     parallels = np.arange(25, 44, 1)
+#     plot_mag_map(fin, env['fout1'], box, lgdx, lgdy, meridians, parallels)
+#
+# def mag_comp_nz(target, source, env):
+#     fin = os.path.join('data', 'event_list_nz.csv')
+#     plot_mag_comp(fin, env['fout'], countryname='New Zealand')
+#     box = (-50.5, -32., 164.5, 180.5, -41.25)
+#     meridians = np.arange(164, 182, 4)
+#     parallels = np.arange(-51, -31, 2)
+#     lgdx = [168., 166., 168., 170., 167.]
+#     lgdy = [-49.1, -50., -50., -50., -49.65]
+#     plot_mag_map(fin, env['fout1'], box, lgdx, lgdy, meridians, parallels)
+#
+# def mag_comp_ch(target, source, env):
+#     fin = os.path.join('data', 'event_list_ch.csv')
+#     plot_mag_comp(fin, env['fout'], magnitude_correction='%s+0.25',
+#                   countryname='Switzerland')
+#     box = (44., 49.5, 4.5, 13.5, 47.)
+#     meridians = np.arange(5, 12, 2)
+#     parallels = np.arange(44, 49, 2)
+#     lgdx = [6.5, 5.5, 6.5, 7.5, 5.5]
+#     lgdy = [45, 44.5, 44.5, 44.5, 44.75]
+#     plot_mag_map(fin, env['fout1'], box, lgdx, lgdy, meridians, parallels,
+#                  magnitude_correction='%s+0.25')
+#
+# def mag_comp_turkey(target, source, env):
+#     fin = os.path.join('data', 'event_list_turkey.csv')
+#     plot_mag_comp(fin, env['fout'], countryname='Turkey')
+#     box = (39., 43.5, 23.5, 31., 41.)
+#     meridians = np.arange(22, 38, 2)
+#     parallels = np.arange(34, 44, 1)
+#     lgdx = [25., 24., 25., 26., 24]
+#     lgdy = [42.9, 42.3, 42.3, 42.3, 42.55 ]
+#     plot_mag_map(fin, env['fout1'], box, lgdx, lgdy, meridians, parallels)
+#
+#
+# def maps(target, source, env):
+#     overview_map(traveltime=True, alerttime=False)
+#     overview_map(traveltime=False, alerttime=True)
+#
+# def mag_comp_depth(target, source, env):
+#     fndict = {'./data/event_list_turkey.csv':None,
+#               './data/event_list_nz.csv':None,
+#               './data/event_list_ch.csv':'%s+0.25',
+#               './data/event_list_romania.csv':'0.83*((%s-0.8)/0.74)+0.17',
+#               './data/event_list_patras.csv':None}
+#     shallow_deep_mag_comp(fndict, env['fout1'])
+#     shallow_deep_mag_comp(fndict, env['fout2'], shallow=False)
+#
+#
+#
 ##################################################################
 sourcefn = 'reakt.scons'
-
-
-env = Environment(ENV=os.environ,
-                  BUILDERS={'do': Builder(action=p_wave_tt_koeri)},
-                  fout='plots/ptt_koeri_6_stations.png')
-env.do('p_wave_tt_koeri', sourcefn)
-
-env = Environment(ENV=os.environ,
-                  BUILDERS={'do': Builder(action=p_wave_tt_imo)},
-                  fout='plots/ptt_imo_6_stations.png')
-env.do('p_wave_tt_imo', sourcefn)
-
-env = Environment(ENV=os.environ,
-                  BUILDERS={'do': Builder(action=p_wave_tt_ro)},
-                  fout='plots/ptt_ro_6_stations.png')
-env.do('p_wave_tt_ro', sourcefn)
-
-env = Environment(ENV=os.environ,
-                  BUILDERS={'do': Builder(action=p_wave_tt_gr)},
-                  fout='plots/p_wave_tt_gr.png')
-env.do('p_wave_tt_gr', sourcefn)
-
-env = Environment(ENV=os.environ,
-                  BUILDERS={'do': Builder(action=p_wave_tt_nz)},
-                  fout='plots/p_wave_tt_nz.png')
-env.do('p_wave_tt_nz', sourcefn)
-
-env = Environment(ENV=os.environ,
-                  BUILDERS={'do': Builder(action=p_wave_tt_ch_vp3d)},
-                  fout='plots/ptt_ch_6_stations_vp3d.png')
-env.do('p_wave_tt_ch_vp3d', sourcefn)
-
+#
+#
+# env = Environment(ENV=os.environ,
+#                   BUILDERS={'do': Builder(action=p_wave_tt_koeri)},
+#                   fout='plots/ptt_koeri_6_stations.png')
+# env.do('p_wave_tt_koeri', sourcefn)
+#
+# env = Environment(ENV=os.environ,
+#                   BUILDERS={'do': Builder(action=p_wave_tt_imo)},
+#                   fout='plots/ptt_imo_6_stations.png')
+# env.do('p_wave_tt_imo', sourcefn)
+#
+# env = Environment(ENV=os.environ,
+#                   BUILDERS={'do': Builder(action=p_wave_tt_ro)},
+#                   fout='plots/ptt_ro_6_stations.png')
+# env.do('p_wave_tt_ro', sourcefn)
+#
+# env = Environment(ENV=os.environ,
+#                   BUILDERS={'do': Builder(action=p_wave_tt_gr)},
+#                   fout='plots/p_wave_tt_gr.png')
+# env.do('p_wave_tt_gr', sourcefn)
+#
+# env = Environment(ENV=os.environ,
+#                   BUILDERS={'do': Builder(action=p_wave_tt_nz)},
+#                   fout='plots/p_wave_tt_nz.png')
+# env.do('p_wave_tt_nz', sourcefn)
+#
+# env = Environment(ENV=os.environ,
+#                   BUILDERS={'do': Builder(action=p_wave_tt_ch_vp3d)},
+#                   fout='plots/ptt_ch_6_stations_vp3d.png')
+# env.do('p_wave_tt_ch_vp3d', sourcefn)
+#
 env = Environment(ENV=os.environ,
                   BUILDERS={'do': Builder(action=p_wave_tt_ch)},
-                  fout='plots/ptt_ch_6_stations.png')
+                  fout='plots/ptt_ch_6_stations_test.png')
 env.do('p_wave_tt_ch', sourcefn)
 
 env = Environment(ENV=os.environ,
-                  BUILDERS={'do': Builder(action=p_wave_tt_ch_dp_dist)},
-                  fout='plots/p_wave_tt_ch_dp_dist.png')
-env.do('p_wave_tt_ch_dp_dist', sourcefn)
-
-env = Environment(ENV=os.environ,
-                  BUILDERS={'do': Builder(action=env_delay_KOERI)},
-                  fout='plots/env_delay_KOERI.png')
-env.do('env_delay_KOERI', sourcefn)
-
-env = Environment(ENV=os.environ,
-                  BUILDERS={'do': Builder(action=mag_comp_romania)},
-                  fout='plots/mag_comp_romania.png',
-                  fout1='plots/mag_comp_map_romania.png')
-env.do('mag_comp_romania', sourcefn)
-
-env = Environment(ENV=os.environ,
-                  BUILDERS={'do': Builder(action=mag_comp_patras)},
-                  fout='plots/mag_comp_patras.png',
-                  fout1='plots/mag_comp_map_patras.png')
-env.do('mag_comp_patras', sourcefn)
-
-env = Environment(ENV=os.environ,
-                  BUILDERS={'do': Builder(action=mag_comp_nz)},
-                  fout='plots/mag_comp_nz.png',
-                  fout1='plots/mag_comp_map_nz.png')
-env.do('mag_comp_nz', sourcefn)
-
-env = Environment(ENV=os.environ,
-                  BUILDERS={'do': Builder(action=mag_comp_ch)},
-                  fout='plots/mag_comp_ch.png',
-                  fout1='plots/mag_comp_map_ch.png')
-env.do('mag_comp_ch', sourcefn)
-
-env = Environment(ENV=os.environ,
-                  BUILDERS={'do': Builder(action=mag_comp_turkey)},
-                  fout='plots/mag_comp_turkey.png',
-                  fout1='plots/mag_comp_map_turkey.png')
-env.do('mag_comp_turkey', sourcefn)
-
-env = Environment(ENV=os.environ,
-                  BUILDERS={'do': Builder(action=maps)})
-env.do('maps', sourcefn)
-
-env = Environment(ENV=os.environ,
-                  BUILDERS={'do': Builder(action=mag_comp_depth)},
-                  fout1='plots/shallow_mag_comp.png',
-                  fout2='plots/deep_mag_comp.png')
-env.do('mag_comp_depth', sourcefn)
-
-# env = Environment()
-Depends('all_mag_comp', ['mag_comp_nz', 'mag_comp_ch', 'mag_comp_turkey', 'mag_comp_patras', 'mag_comp_romania'])
+                  BUILDERS={'do': Builder(action=event_alert_times_ch)})
+env.do('event_alert_times_ch', sourcefn)
 
 
+# env = Environment(ENV=os.environ,
+#                   BUILDERS={'do': Builder(action=p_wave_tt_ch_dp_dist)},
+#                   fout='plots/p_wave_tt_ch_dp_dist.png')
+# env.do('p_wave_tt_ch_dp_dist', sourcefn)
+#
+# env = Environment(ENV=os.environ,
+#                   BUILDERS={'do': Builder(action=env_delay_KOERI)},
+#                   fout='plots/env_delay_KOERI.png')
+# env.do('env_delay_KOERI', sourcefn)
+#
+# env = Environment(ENV=os.environ,
+#                   BUILDERS={'do': Builder(action=mag_comp_romania)},
+#                   fout='plots/mag_comp_romania.png',
+#                   fout1='plots/mag_comp_map_romania.png')
+# env.do('mag_comp_romania', sourcefn)
+#
+# env = Environment(ENV=os.environ,
+#                   BUILDERS={'do': Builder(action=mag_comp_patras)},
+#                   fout='plots/mag_comp_patras.png',
+#                   fout1='plots/mag_comp_map_patras.png')
+# env.do('mag_comp_patras', sourcefn)
+#
+# env = Environment(ENV=os.environ,
+#                   BUILDERS={'do': Builder(action=mag_comp_nz)},
+#                   fout='plots/mag_comp_nz.png',
+#                   fout1='plots/mag_comp_map_nz.png')
+# env.do('mag_comp_nz', sourcefn)
+#
+# env = Environment(ENV=os.environ,
+#                   BUILDERS={'do': Builder(action=mag_comp_ch)},
+#                   fout='plots/mag_comp_ch.png',
+#                   fout1='plots/mag_comp_map_ch.png')
+# env.do('mag_comp_ch', sourcefn)
+#
+# env = Environment(ENV=os.environ,
+#                   BUILDERS={'do': Builder(action=mag_comp_turkey)},
+#                   fout='plots/mag_comp_turkey.png',
+#                   fout1='plots/mag_comp_map_turkey.png')
+# env.do('mag_comp_turkey', sourcefn)
+#
+# env = Environment(ENV=os.environ,
+#                   BUILDERS={'do': Builder(action=maps)})
+# env.do('maps', sourcefn)
+#
+# env = Environment(ENV=os.environ,
+#                   BUILDERS={'do': Builder(action=mag_comp_depth)},
+#                   fout1='plots/shallow_mag_comp.png',
+#                   fout2='plots/deep_mag_comp.png')
+# env.do('mag_comp_depth', sourcefn)
+#
+# # env = Environment()
+# Depends('all_mag_comp', ['mag_comp_nz', 'mag_comp_ch', 'mag_comp_turkey', 'mag_comp_patras', 'mag_comp_romania'])
+#
+# # ssh -N -L 9998:localhost:3306 -l sysop 91.212.254.9 (sysop)
+# PhonyTarget('pkdelro', "../delays/sc3vs_pick_delays.py --host 127.0.0.1 \
+#  -u sysop -p sysop --port 9998 -d seiscomp3 --dbtype mysql --new\
+#  -o /tmp/single_station_pk_delays_ro.txt --plotfile=/tmp/single_station_pk_delays_ro.png")
+#
+# # ssh -N -L 9997:localhost:3306 -l sysop 193.140.203.64  (tesla700%)
+# PhonyTarget('pkdelkoeri', "../delays/sc3vs_pick_delays.py --host 127.0.0.1 \
+#  -u sysop -p sysop --port 9997 -d seiscomp3 --dbtype mysql --new\
+#  -o /tmp/single_station_pk_delays_koeri.txt --plotfile=/tmp/single_station_pk_delays_koeri.png")
+#
+# PhonyTarget('pkdelch', "../delays/sc3vs_pick_delays.py --host rzseddb.ethz.ch \
+#  -u wwwuser -p www2uSer --port 5434 -d zurichprodrz --dbtype postgresql --new\
+#  -o /tmp/single_station_pk_delays_ch.txt --plotfile=/tmp/single_station_pk_delays_ch.png")
+#
+# #     host = '127.0.0.1'
+# #     db = 'seiscomp3'
+# #     user = 'sysop'
+# #     pwd = 'sysop'
+# #     port = '9998'
+# #     new = 'true'
+# #     PhonyTarget('', "./vs_performance_plot.py %(eewvslog)s %(stationfile)s\
+# #  --lat %(lat)f --lon %(lon)f --ot %(ot)s --mag %(mag)f \
+# #  --evid %(eventid)s --maxtime 60 --invalid --savemp4" % vars())
+#
 
