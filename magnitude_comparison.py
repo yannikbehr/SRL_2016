@@ -16,6 +16,7 @@ class MagComp:
     def __init__(self):
         self.fig = None
         self.ax = None
+        self.debug = False
         self.fndict = {'Turkey':{'file':'./data/event_list_turkey.csv', 'correction':None},
                        'New Zealand':{'file':'./data/event_list_nz.csv', 'correction':None},
                        'Switzerland':{'file':'./data/event_list_ch.csv', 'correction':'%s+0.25'},
@@ -97,12 +98,13 @@ class MagComp:
             idx = np.where(ml >= minmag)
             mn = np.mean(mvs[idx] - ml[idx])
             std = np.std(mvs[idx] - ml[idx])
-            print "Number of events: %d; Minimum magnitude: %.2f; Maximum magnitude: %.2f; Mean difference: %.2f; Std (difference): %.2f" % (ml[idx].size, ml[idx].min(), ml[idx].max(), mn, std)
-            print "Number of events with location error <= 100: %d" % small_error[0].size
-            print "---> out of these # of events within +-0.5 Ml: %d" % (good[0].size)
+            if self.debug:
+                print "Number of events: %d; Minimum magnitude: %.2f; Maximum magnitude: %.2f; Mean difference: %.2f; Std (difference): %.2f" % (ml[idx].size, ml[idx].min(), ml[idx].max(), mn, std)
+                print "Number of events with location error <= 100: %d" % small_error[0].size
+                print "---> out of these # of events within +-0.5 Ml: %d" % (good[0].size)
             cb = self.fig.colorbar(sc, orientation=cbo, ax=ax)
             cb.set_label("Depth [km]")
-            ax.text(5.5, -1.1, 'Location precision [km]',
+            ax.text(5.5, -1.1, 'Location accuracy [km]',
                     horizontalalignment='center')
             ax.scatter(4.8, -1.42, s=fact / 10, c='white')
             ax.text(4.8, -1.9, r'$\geq$ 10',
@@ -135,7 +137,8 @@ class MagComp:
         dist /= 1000.
         ddep = np.abs(dep - depvs)
         dist = np.sqrt(dist * dist + ddep * ddep)
-        print "Country: ", countryname
+        if self.debug:
+            print "Country: ", countryname
         ax.text(5.3, 1.5, countryname, horizontalalignment='left',
                 verticalalignment='center', fontsize=14)
         ax.text(4.9, 1.5, panelnumber, horizontalalignment='right',
@@ -179,7 +182,6 @@ class MagComp:
             txt = r'shallow events ($<$ 40 km)'
         else:
             txt = r'deep events ($\geq$ 40 km)'
-        print txt
         ax.text(4.7, 1.5, txt, horizontalalignment='left',
                 verticalalignment='center', fontsize=14)
         ax.text(4.5, 1.5, panelnumber, horizontalalignment='right',
