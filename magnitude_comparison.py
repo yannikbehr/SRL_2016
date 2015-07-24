@@ -12,9 +12,10 @@ import numpy as np
 import pyproj
 from collections import defaultdict
 from scipy.stats import scoreatpercentile
+from obspy import UTCDateTime
 import ipdb
 
-txt_fontsize = 14
+txt_fontsize = 16
 
 class MagComp:
 
@@ -65,13 +66,13 @@ class MagComp:
         """
         Set up the panels to plot in.
         """
-        width = 18.0
+        width = 10.0
         height = 18.0
         self.fig = plt.figure(1, (width, height))
         self.ax = []
         vmargin = 0.7 / width
-        hmargin = 0.5 / width
-        vpad = 0.7 / height
+        hmargin = 1.0 / width
+        vpad = 0.5 / height
         shpad = 0.6 / width
         hpad = 0.5 / width
         spht = 3.2 / height
@@ -93,14 +94,16 @@ class MagComp:
 
         # middle row
         x = vmargin
-        w = bpwd
-        h = bpht
-        y += vpad + spht
+        y += vpad + bpht
+        w = spwd
+        h = spht
         self.ax.append(self.fig.add_axes((x, y, w, h)))
-        x += hpad + bpwd - 0.8 * hpad
+        x += shpad + spwd
         self.ax.append(self.fig.add_axes((x, y, w, h)))
-        x += hpad + bpwd
-        self.ax.append(self.fig.add_axes((x, y, spwd, spht)))
+        x += shpad + spwd
+        self.ax.append(self.fig.add_axes((x, y, w, h)))
+        plt.setp(self.ax[4].get_yticklabels(), visible=False)
+        plt.setp(self.ax[5].get_yticklabels(), visible=False)
 
         # top row
         x = vmargin
@@ -114,11 +117,18 @@ class MagComp:
         self.ax.append(self.fig.add_axes((x, y, w, h)))
         plt.setp(self.ax[7].get_yticklabels(), visible=False)
         plt.setp(self.ax[8].get_yticklabels(), visible=False)
+
+        # legend box
+        x = 3.6 / width
+        y = -0.36 / height
+        w = 9.0 / width
+        h = 0.9 / height
+        self.ax.append(self.fig.add_axes((x, y, w, h)))
         # plt.show()
 
     def plot_mag(self, ax, ml, mvs, dist, dep, xmin=2.0, xmax=7.0, fact=2000.0,
                  cbo='horizontal', marker='o', legend=True, minmag=2.0,
-                 cb_aspect=20):
+                 cb_aspect=30, stats=True):
         dist = np.where(dist < 10.0, 10.0, dist)
         idx = np.where((dist < 100.0) & (ml >= minmag))
         if idx[0].size > 0:
@@ -141,29 +151,15 @@ class MagComp:
             cb = self.fig.colorbar(sc, orientation=cbo, ax=ax,
                                    aspect=cb_aspect)
             cb.set_label("Depth [km]")
-            ax.text(5.5, -1.1, 'Location accuracy [km]',
-                    horizontalalignment='center', fontsize=txt_fontsize)
-            ax.scatter(4.8, -1.42, s=fact / 10, c='white')
-            ax.text(4.8, -1.9, r'$\geq$ 10',
-                    horizontalalignment='center')
-            ax.scatter(5.4, -1.42, s=fact / 30.0, c='white')
-            ax.text(5.4, -1.9, r'30', horizontalalignment='center')
-            ax.scatter(5.95, -1.42, s=fact / 50, c='white')
-            ax.text(5.95, -1.9, '50', horizontalalignment='center')
-            ax.scatter(6.5, -1.42, s=100, c='black', marker='+')
-            ax.text(6.5, -1.9, r'$\leq$ 100', horizontalalignment='center')
+        if stats:
             mags, med, ub, lb = self.stats(ml[idx], mvs[idx])
             ax.plot(np.linspace(xmin, xmax + 0.1, 100),
                     np.zeros(100), 'k-')
-            # ax.plot(np.linspace(xmin, xmax + 0.1, 100),
-            #        np.zeros(100) + 0.5, 'k--')
-            # ax.plot(np.linspace(xmin, xmax + 0.1, 100),
-            #        np.zeros(100) - 0.5, 'k--')
-            ax.plot(mags, med, 'k--')
-            ax.plot(mags, ub, 'k--')
-            ax.plot(mags, lb, 'k--')
-            ax.set_xlabel('Ml')
-            ax.set_ylabel('MVS - Ml')
+            ax.plot(mags, med, ls='-', color='darkgray', lw=3)
+            ax.plot(mags, ub, 'k--', lw=3)
+            ax.plot(mags, lb, 'k--', lw=3)
+        ax.set_xlabel(r'$M_L$')
+        ax.set_ylabel(r'$M_{VS} - M_L$')
         ax.set_xlim(xmin, xmax)
         ax.set_ylim(-2, 2)
 
@@ -191,24 +187,33 @@ class MagComp:
         minmag = 1e39
         maxmag = 0.
         nevents = 0
+        latest = UTCDateTime(0)
+        earliest = UTCDateTime()
         allml = np.array([])
         allmvs = np.array([])
         alldist = np.array([])
         alldep = np.array([])
         for _c in self.fndict.keys():
             fn = self.fndict[_c]['file']
-            dep, depvs, mvs, ml, lon, lat, lonvs, latvs = \
+            ot, dep, depvs, mvs, ml, lon, lat, lonvs, latvs = \
             np.loadtxt(fn, unpack=True, delimiter=',',
-                       usecols=(4, 8, 9, 1, 3, 2, 7, 6))
+                       usecols=(0, 4, 8, 9, 1, 3, 2, 7, 6),
+                       converters={0:UTCDateTime})
+            idxmag = np.where((ml >= 2.0))
+            nevents += idxmag[0].size
+            for _ot in map(UTCDateTime, ot):
+                if _ot > latest:
+                    latest = _ot
+                if _ot < earliest:
+                    earliest = _ot
             if self.fndict[_c]['correction'] is not None:
                 mvs = eval(self.fndict[_c]['correction'] % 'mvs')
             if shallow:
-                idx = np.where((dep <= depdisc) & (ml > magdisc))
+                idx = np.where((dep <= depdisc) & (ml >= magdisc))
             else:
-                idx = np.where((dep > depdisc) & (ml > magdisc))
+                idx = np.where((dep > depdisc) & (ml >= magdisc))
             if idx[0].size < 2:
                 continue
-            nevents += idx[0].size
             minmag = min(ml[idx].min(), minmag)
             maxmag = max(ml[idx].max(), maxmag)
             az, baz, dist = self.g.inv(lon[idx], lat[idx], lonvs[idx], latvs[idx])
@@ -227,7 +232,12 @@ class MagComp:
                 verticalalignment='center', fontsize=txt_fontsize)
         ax.text(4.2, 1.5, panelnumber, horizontalalignment='right',
                 verticalalignment='center', fontsize=txt_fontsize)
-        self.plot_mag(ax, allml, allmvs, alldist, alldep, cbo='vertical')
+        self.plot_mag(ax, allml, allmvs, alldist, alldep, cbo='horizontal')
+        print "Number of events: %d" % nevents
+        print "Earliest event: %s" % earliest
+        print "Latest event: %s" % latest
+        print "Smallest magnitude: %.2f" % minmag
+        print "Largest magnitude: %.2f" % maxmag
 
     def add_bardarbunga(self, ax, depdisc=None, shallow=False, deep=False):
         """
@@ -255,23 +265,29 @@ class MagComp:
         dist /= 1000.
         ddep = np.abs(dep[idx] - depvs[idx])
         dist = np.sqrt(dist * dist + ddep * ddep)
-        self.plot_mag(ax, ml[idx], mvs[idx], dist[idx], dep[idx], cbo='vertical',
-                      marker='s', legend=False)
+        sc = ax.scatter(ml[idx], mvs[idx] - ml[idx], marker='x', c=dep[idx],
+                        linewidths=1.0, alpha=0.5)
+
 
     def plot(self, fout):
-        self.plot_mag_comp(self.ax[0], countryname='Turkey', panelnumber='g')
-        self.plot_mag_comp(self.ax[1], countryname='Romania', panelnumber='h')
-        self.plot_mag_comp(self.ax[2], countryname='Iceland', panelnumber='i')
-        # self.add_bardarbunga(self.ax[2])
+        # middle row
+        self.plot_mag_comp(self.ax[3], countryname='Turkey', panelnumber='d')
+        self.plot_mag_comp(self.ax[4], countryname='Romania', panelnumber='e')
+        self.add_bardarbunga(self.ax[5])
+        self.plot_mag_comp(self.ax[5], countryname='Iceland', panelnumber='f')
+        for i in [4, 5]:
+            self.ax[i].set_ylabel('')
+            self.ax[i].set_yticklabels([])
+
+        # bottom row
+        self.plot_mag_comp(self.ax[0], countryname='California', panelnumber='g')
+        self.shallow_deep_mag_comp(self.ax[1], shallow=False, panelnumber='h')
+        self.shallow_deep_mag_comp(self.ax[2], panelnumber='i')
         for i in [1, 2]:
             self.ax[i].set_ylabel('')
             self.ax[i].set_yticklabels([])
-        self.shallow_deep_mag_comp(self.ax[3], panelnumber='d')
-        self.shallow_deep_mag_comp(self.ax[4], shallow=False, panelnumber='e')
-        self.plot_mag_comp(self.ax[5], countryname='California', panelnumber='f')
-        self.add_bardarbunga(self.ax[4], depdisc=40.0, deep=True)
-        self.ax[4].set_ylabel('')
-        self.ax[4].set_yticklabels([])
+
+        # top row
         self.plot_mag_comp(self.ax[6], countryname='Switzerland',
                            panelnumber='a')
         self.plot_mag_comp(self.ax[7], countryname='Patras',
@@ -281,8 +297,35 @@ class MagComp:
         for i in [7, 8]:
             self.ax[i].set_ylabel('')
             self.ax[i].set_yticklabels([])
+
+        # legend
+        fact = 2000.0
+        self.ax[9].set_xlim(0, 1)
+        self.ax[9].set_ylim(0, 1)
+        self.ax[9].axis('off')
+        self.ax[9].text(0.2, 0.9, 'Location accuracy [km]',
+                        horizontalalignment='center', fontsize=txt_fontsize)
+        self.ax[9].scatter(0.1, 0.2, s=fact / 10, c='white')
+        self.ax[9].text(0.1, 0.5, r'$\geq$ 10',
+                        horizontalalignment='center')
+        self.ax[9].scatter(0.15, 0.2, s=fact / 30.0, c='white')
+        self.ax[9].text(0.15, 0.5, r'30', horizontalalignment='center')
+        self.ax[9].scatter(0.2, 0.2, s=fact / 50, c='white')
+        self.ax[9].text(0.2, 0.5, '50', horizontalalignment='center')
+        self.ax[9].scatter(0.25, 0.2, s=100, c='black', marker='+')
+        self.ax[9].text(0.25, 0.5, r'$\leq$ 100', horizontalalignment='center')
+        self.ax[9].plot([0.5, 0.55, 0.6], [0.8, 0.8, 0.8], ls='-',
+                        color='darkgray', lw=3)
+        self.ax[9].text(0.63, 0.8, 'median', horizontalalignment='left',
+                        verticalalignment='center', fontsize=txt_fontsize)
+        self.ax[9].plot([0.5, 0.55, 0.6], [0.5, 0.5, 0.5], ls='--',
+                         color='k', lw=3)
+        self.ax[9].text(0.63, 0.5, r'$16^{th}$ and $84^{th}$ percentile',
+                        horizontalalignment='left',
+                        verticalalignment='center', fontsize=txt_fontsize)
         self.fig.savefig(fout, dpi=300, bbox_inches='tight')
-        plt.show()
+
+#        plt.show()
 
 if __name__ == '__main__':
     fout = './plots/mag_comp.pdf'

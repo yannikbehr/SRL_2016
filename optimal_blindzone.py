@@ -210,6 +210,7 @@ def plot_bz(**kargs):
         de.compute(ni, elon, elat, edep, vp=6.5, vs=3.5,
                    nnst=2, procdelay=True, nmaps=500, resultsfn=kargs['fout'],
                    latencies=do)
+    print lat.shape
     if 'ax' not in kargs and 'fig' not in kargs:
         fig = plt.figure(figsize=(10, 10))
         ax = fig.add_axes([0.08, 0.35, 0.8, 0.6])
