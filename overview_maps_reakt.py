@@ -150,7 +150,7 @@ def main(traveltime=False, alerttime=False, blindzone=False,
         cb_label.append('Alert delay ($\Delta t_{alert}$) [s]')
         cb_label.append('Magnitude with positive EEW zone')
 
-    # get the damage zone, that is the zone for which intensity is >= 7.0
+    # get the damage zone, that is the zone for which intensity is >= 5.0
     # for magnitudes >= 5.0
     mags, dz = damage_zone()
 
@@ -357,7 +357,7 @@ def main(traveltime=False, alerttime=False, blindzone=False,
                            orientation='vertical', extend=extend)
         cb2.set_label(cb_label[1], fontsize=cb_fontsize, labelpad=lbl_pad)
         cb2.set_ticks(ticks)
-        cb2.set_ticklabels([int(x / 6.5 + 0.5) for x in ticks])
+        cb2.set_ticklabels([int(x / 3.5 + 0.5) for x in ticks])
         cb2.ax.tick_params(labelsize=lbl_fontsize)
         cb3 = ColorbarBase(cax3, cmap=cmap, norm=LogNorm(vmin=vmin, vmax=vmax),
                            orientation='vertical', extend=extend)
@@ -392,10 +392,10 @@ def station_distance(traveltime, depth, vp, nst):
     dist = traveltime * vp
     return [int(sdist + 0.5) for sdist in np.sqrt(dist * dist - depth * depth)]
 
-def alert_time(blindzone, depth, vp):
-    return [int(at + 0.5) for at in np.sqrt(blindzone * blindzone + depth * depth) / vp]
+def alert_time(blindzone, depth, vs):
+    return [int(at + 0.5) for at in np.sqrt(blindzone * blindzone + depth * depth) / vs]
 
-def damage_zone():
+def damage_zone(intensity=6):
     dz = []
     mags = np.arange(5.0, 9.0, 0.1)
     c0 = 2.085
@@ -411,7 +411,7 @@ def damage_zone():
         Rm = m1 + m2 * np.exp(mag - 5)
         I = c0 + c1 * mag + c2 * np.log(np.sqrt(Rhyp ** 2 + Rm ** 2)) + S
         I = np.where(Rhyp > 50., I + dist_correct, I)
-        idx = np.where(I >= 7)
+        idx = np.where(I >= intensity)
         dz.append(Rhyp[idx][-1])
     return (mags, dz)
 if __name__ == '__main__':
