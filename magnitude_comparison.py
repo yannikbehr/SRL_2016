@@ -8,6 +8,7 @@ Created on Nov 24, 2014
 import matplotlib
 matplotlib.use('WXAgg')
 import matplotlib.pyplot as plt
+from matplotlib.colors import Normalize
 import numpy as np
 import pyproj
 from collections import defaultdict
@@ -31,7 +32,7 @@ class MagComp:
                        'Iceland':{'file':'./data/event_list_iceland.csv',
                                   'file_bb':'./data/event_list_iceland_bardarbunga.csv',
                                   'correction':None},
-                       'California':{'file':'./data/event_list_ca.csv', 'correction':None}}
+                       'southern California':{'file':'./data/event_list_ca.csv', 'correction':None}}
         self.g = pyproj.Geod(ellps='WGS84')
 
     def read_data(self):
@@ -128,16 +129,21 @@ class MagComp:
 
     def plot_mag(self, ax, ml, mvs, dist, dep, xmin=2.0, xmax=7.0, fact=2000.0,
                  cbo='horizontal', marker='o', legend=True, minmag=2.0,
-                 cb_aspect=30, stats=True):
+                 cb_aspect=30, stats=True, mindep=0, maxdep=25):
+        nevents = 0
         dist = np.where(dist < 10.0, 10.0, dist)
         idx = np.where((dist < 100.0) & (ml >= minmag))
         if idx[0].size > 0:
             sc = ax.scatter(ml[idx], mvs[idx] - ml[idx], marker=marker, c=dep[idx],
-                            s=fact / dist[idx], linewidths=0, alpha=0.5)
+                            s=fact / dist[idx], linewidths=0, alpha=0.5,
+                            norm=Normalize(vmin=mindep, vmax=maxdep))
+            nevents += idx[0].size
         idx = np.where((dist >= 100.0) & (ml >= minmag))
         if idx[0].size > 0:
             sc = ax.scatter(ml[idx], mvs[idx] - ml[idx], marker='+', c=dep[idx],
-                            s=100.0, linewidths=1, alpha=0.5)
+                            s=100.0, linewidths=1, alpha=0.5,
+                            norm=Normalize(vmin=mindep, vmax=maxdep))
+            nevents += idx[0].size
         if legend:
             small_error = np.where((dist < 100.) & (ml > minmag))
             good = np.where(np.abs(ml[small_error] - mvs[small_error]) <= 0.5)
@@ -162,8 +168,10 @@ class MagComp:
         ax.set_ylabel(r'$M_{VS} - M_L$')
         ax.set_xlim(xmin, xmax)
         ax.set_ylim(-2, 2)
+        return nevents
 
-    def plot_mag_comp(self, ax, mtype='Ml', countryname='', panelnumber=''):
+    def plot_mag_comp(self, ax, mtype='Ml', countryname='', panelnumber='',
+                      maxdep=25):
         fn = self.fndict[countryname]['file']
         dep, depvs, mvs, ml, lon, lat, lonvs, latvs = \
         np.loadtxt(fn, unpack=True, delimiter=',',
@@ -176,17 +184,22 @@ class MagComp:
         dist = np.sqrt(dist * dist + ddep * ddep)
         if self.debug:
             print "Country: ", countryname
-        ax.text(5.3, 1.5, countryname, horizontalalignment='left',
+        ax.text(4.3, 1.5, panelnumber, horizontalalignment='left',
                 verticalalignment='center', fontsize=txt_fontsize)
-        ax.text(4.9, 1.5, panelnumber, horizontalalignment='right',
+        ax.text(4.6, 1.5, countryname, horizontalalignment='left',
                 verticalalignment='center', fontsize=txt_fontsize)
-        self.plot_mag(ax, ml, mvs, dist, dep, cb_aspect=30)
+        nevents = self.plot_mag(ax, ml, mvs, dist, dep, cb_aspect=30,
+                                maxdep=maxdep)
+        ax.text(4.6, 1.1, "# of events: %d" % nevents, horizontalalignment='left',
+                verticalalignment='center', fontsize=txt_fontsize)
 
-    def shallow_deep_mag_comp(self, ax, depdisc=40., magdisc=0.0, shallow=True,
+    def shallow_deep_mag_comp(self, ax, depdisc=40., magdisc=2.0, shallow=True,
                               panelnumber=''):
         minmag = 1e39
         maxmag = 0.
         nevents = 0
+        nshallow = 0
+        ndeep = 0
         latest = UTCDateTime(0)
         earliest = UTCDateTime()
         allml = np.array([])
@@ -210,8 +223,10 @@ class MagComp:
                 mvs = eval(self.fndict[_c]['correction'] % 'mvs')
             if shallow:
                 idx = np.where((dep <= depdisc) & (ml >= magdisc))
+                nshallow += idx[0].size
             else:
                 idx = np.where((dep > depdisc) & (ml >= magdisc))
+                ndeep += idx[0].size
             if idx[0].size < 2:
                 continue
             minmag = min(ml[idx].min(), minmag)
@@ -225,14 +240,23 @@ class MagComp:
             alldist = np.hstack((alldist, dist))
             alldep = np.hstack((alldep, dep[idx]))
         if shallow:
-            txt = r'shallow events ($<$ 40 km)'
+            txt = r'shallow events ($\leq$ 40 km)'
+            mindep = 0
+            maxdep = 40
+            ax.text(4.4, 1.1, "# of events: %d" % nshallow, horizontalalignment='left',
+                    verticalalignment='center', fontsize=txt_fontsize)
         else:
-            txt = r'deep events ($\geq$ 40 km)'
-        ax.text(4.4, 1.5, txt, horizontalalignment='left',
-                verticalalignment='center', fontsize=txt_fontsize)
+            txt = r'deep events ($>$ 40 km)'
+            mindep = 40
+            maxdep = 300
+            ax.text(4.4, 1.1, "# of events: %d" % ndeep, horizontalalignment='left',
+                    verticalalignment='center', fontsize=txt_fontsize)
         ax.text(4.2, 1.5, panelnumber, horizontalalignment='right',
                 verticalalignment='center', fontsize=txt_fontsize)
-        self.plot_mag(ax, allml, allmvs, alldist, alldep, cbo='horizontal')
+        ax.text(4.4, 1.5, txt, horizontalalignment='left',
+                verticalalignment='center', fontsize=txt_fontsize)
+        self.plot_mag(ax, allml, allmvs, alldist, alldep, cbo='horizontal',
+                      mindep=mindep, maxdep=maxdep)
         print "Number of events: %d" % nevents
         print "Earliest event: %s" % earliest
         print "Latest event: %s" % latest
@@ -271,16 +295,20 @@ class MagComp:
 
     def plot(self, fout):
         # middle row
-        self.plot_mag_comp(self.ax[3], countryname='Turkey', panelnumber='d')
-        self.plot_mag_comp(self.ax[4], countryname='Romania', panelnumber='e')
+        self.plot_mag_comp(self.ax[3], countryname='Turkey', panelnumber='d',
+                           maxdep=25)
+        self.plot_mag_comp(self.ax[4], countryname='Romania', panelnumber='e',
+                           maxdep=150)
         self.add_bardarbunga(self.ax[5])
-        self.plot_mag_comp(self.ax[5], countryname='Iceland', panelnumber='f')
+        self.plot_mag_comp(self.ax[5], countryname='Iceland', panelnumber='f',
+                           maxdep=25)
         for i in [4, 5]:
             self.ax[i].set_ylabel('')
             self.ax[i].set_yticklabels([])
 
         # bottom row
-        self.plot_mag_comp(self.ax[0], countryname='California', panelnumber='g')
+        self.plot_mag_comp(self.ax[0], countryname='southern California',
+                           panelnumber='g', maxdep=25)
         self.shallow_deep_mag_comp(self.ax[1], shallow=False, panelnumber='h')
         self.shallow_deep_mag_comp(self.ax[2], panelnumber='i')
         for i in [1, 2]:
@@ -289,11 +317,11 @@ class MagComp:
 
         # top row
         self.plot_mag_comp(self.ax[6], countryname='Switzerland',
-                           panelnumber='a')
+                           panelnumber='a', maxdep=25)
         self.plot_mag_comp(self.ax[7], countryname='Patras',
-                           panelnumber='b')
+                           panelnumber='b', maxdep=150)
         self.plot_mag_comp(self.ax[8], countryname='New Zealand',
-                           panelnumber='c')
+                           panelnumber='c', maxdep=300)
         for i in [7, 8]:
             self.ax[i].set_ylabel('')
             self.ax[i].set_yticklabels([])
