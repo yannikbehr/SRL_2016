@@ -89,7 +89,7 @@ def plot_at(datafn, bmap, cmap, vmin=0., vmax=15., extend='neither',
 
 
 def main(traveltime=False, alerttime=False, blindzone=False,
-         bzreduction=False, optimalbz=False):
+         bzreduction=False, optimalbz=False, txt_fontsize=14):
     lonmin, lonmax, latmin, latmax = 2.5, 37.5, 35.0, 48.0
     dlat = 2.0
     dlon = 2.0
@@ -125,7 +125,7 @@ def main(traveltime=False, alerttime=False, blindzone=False,
         cb_int = 15
         # fout = 'plots/blind_zone_maps_reakt.png'
         fout = 'plots/blind_zone_maps_reakt.pdf'
-        cb_label.append('Blind zone [km]')
+        cb_label.append('No-warning zone radius [km]')
         cb_label.append('Alert delay ($\Delta t_{alert}$) [s]')
         cb_label.append('Magnitude with positive EEW zone')
 
@@ -146,9 +146,9 @@ def main(traveltime=False, alerttime=False, blindzone=False,
         cb_int = 15
         # fout = 'plots/optimal_blind_zone_reakt.png'
         fout = 'plots/optimal_blind_zone_reakt.pdf'
-        cb_label.append('Optimal blind zone [km]')
-        cb_label.append('Alert delay ($\Delta t_{alert}$) [s]')
-        cb_label.append('Magnitude with positive EEW zone')
+        cb_label.append('Optimal no-warning zone radius [km]')
+        cb_label.append('Optimal alert delay ($\Delta t_{alert}$) [s]')
+        cb_label.append('Optimal magnitude with positive EEW zone')
 
     # get the damage zone, that is the zone for which intensity is >= 5.0
     # for magnitudes >= 5.0
@@ -184,31 +184,44 @@ def main(traveltime=False, alerttime=False, blindzone=False,
             # plot Romanian data
             resultsfn = os.path.join(datadir, 'ptt_ro_6stations.npz')
             plot_ptt(resultsfn, m, cmap, dlevel, vmax=vmax)
+            xtxt, ytxt = m(25.0, 48.8)
+            ax.text(xtxt, ytxt, 'Romania', fontsize=txt_fontsize,
+                    horizontalalignment='center')
 
             # plot Greek data
             resultsfn = os.path.join(datadir, 'p_wave_tt_gr.npz')
             plot_ptt(resultsfn, m, cmap, dlevel, vmax=vmax)
+            xtxt, ytxt = m(19.5, 36.5)
+            ax.text(xtxt, ytxt, 'Greece', fontsize=txt_fontsize,
+                    horizontalalignment='center')
+
 
             # plot Swiss data
             resultsfn = os.path.join(datadir, 'ptt_ch_6stations.npz')
             plot_ptt(resultsfn, m, cmap, dlevel, vmax=vmax)
+            xtxt, ytxt = m(8, 48.75)
+            ax.text(xtxt, ytxt, 'Switzerland', fontsize=txt_fontsize,
+                    horizontalalignment='center')
 
             # plot Turkish data
             resultsfn = os.path.join(datadir, 'ptt_koeri_6stations.npz')
             plot_ptt(resultsfn, m, cmap, dlevel, vmax=vmax)
+            xtxt, ytxt = m(34.5, 39.5)
+            ax.text(xtxt, ytxt, 'Turkey', fontsize=txt_fontsize,
+                    horizontalalignment='center')
 
         if alerttime or blindzone or bzreduction or optimalbz:
             if bzreduction or optimalbz:
                 blindzone = True
             # plot Romanian data
-            resultsfn = os.path.join(datadir, 'event_list_romania.csv')
+            resultsfn = os.path.join(datadir, 'event_list_ro.csv')
             optbz = os.path.join(datadir, 'optimal_blindzone_ro.npz')
             plot_at(resultsfn, m, cmap, vmin=vmin, vmax=vmax,
                     blindzone=blindzone, optbz=optbz, bzreduction=bzreduction,
                     optimalbz=optimalbz)
 
             # plot Greek data
-            resultsfn = os.path.join(datadir, 'event_list_patras.csv')
+            resultsfn = os.path.join(datadir, 'event_list_gr.csv')
             optbz = os.path.join(datadir, 'optimal_blindzone_gr.npz')
             plot_at(resultsfn, m, cmap, vmin=vmin, vmax=vmax,
                     blindzone=blindzone, optbz=optbz, bzreduction=bzreduction,
@@ -222,14 +235,13 @@ def main(traveltime=False, alerttime=False, blindzone=False,
                     optimalbz=optimalbz)
 
             # plot Turkish data
-            resultsfn = os.path.join(datadir, 'event_list_turkey.csv')
+            resultsfn = os.path.join(datadir, 'event_list_tr.csv')
             optbz = os.path.join(datadir, 'optimal_blindzone_tr.npz')
             plot_at(resultsfn, m, cmap, vmin=vmin, vmax=vmax,
                     blindzone=blindzone, optbz=optbz, bzreduction=bzreduction,
                     optimalbz=optimalbz)
 
     darkgray = (107 / 255., 107 / 255., 107 / 255.)
-    txt_fontsize = 14
     # add a panel for California
     if True:
         # ax_cal = fig.add_axes([0.62, 0., .31, 1.0])
@@ -251,12 +263,12 @@ def main(traveltime=False, alerttime=False, blindzone=False,
         mca.drawparallels([32, 34, 36], labels=[0, 1, 0, 0],
                           color='lightgray', linewidth=0.5, zorder=0,
                           fontsize=lbl_fontsize)
-        xtxt, ytxt = mca(-120, 37.3)
-        ax_cal.text(xtxt, ytxt, 'southern California', fontsize=txt_fontsize,
-                    bbox=dict(facecolor='white', alpha=1.0))
         if traveltime:
             resultsfn = os.path.join(datadir, 'ptt_ca_6stations.npz')
             plot_ptt(resultsfn, mca, cmap, dlevel, vmin=vmin, vmax=vmax)
+            xtxt, ytxt = mca(-121.25, 37.3)
+            ax_cal.text(xtxt, ytxt, 'southern California', fontsize=txt_fontsize,
+                        bbox=dict(facecolor='#eeeeee', alpha=1.0))
         if alerttime or blindzone or optimalbz:
             if bzreduction or optimalbz:
                 blindzone = True
@@ -281,12 +293,12 @@ def main(traveltime=False, alerttime=False, blindzone=False,
         mi.drawparallels(np.arange(60, 70, 2), labels=[0, 1, 0, 0],
                         color='lightgray', linewidth=0.5, zorder=0,
                         fontsize=lbl_fontsize)
-        xtxt, ytxt = mi(-23.5, 67)
-        ax_ice.text(xtxt, ytxt, 'Iceland', fontsize=txt_fontsize)
         # plot Iceland data
         if traveltime:
             resultsfn = os.path.join(datadir, 'ptt_imo_6stations.npz')
             plot_ptt(resultsfn, mi, cmap, dlevel, vmin=vmin, vmax=vmax)
+            xtxt, ytxt = mi(-23.5, 67)
+            ax_ice.text(xtxt, ytxt, 'Iceland', fontsize=txt_fontsize)
         if alerttime or blindzone or optimalbz:
             if bzreduction or optimalbz:
                 blindzone = True
@@ -312,12 +324,12 @@ def main(traveltime=False, alerttime=False, blindzone=False,
         mnz.drawparallels(np.arange(-51, -31, 2), labels=[1, 0, 0, 0],
                         color='lightgray', linewidth=0.5, zorder=0,
                         fontsize=lbl_fontsize)
-        xtxt, ytxt = mnz(165.5, -35)
-        ax_nz.text(xtxt, ytxt, 'New Zealand', fontsize=txt_fontsize)
         # plot NZ data
         if traveltime:
             resultsfn = os.path.join(datadir, 'p_wave_tt_nz.npz')
             plot_ptt(resultsfn, mnz, cmap, dlevel, vmin=vmin, vmax=vmax)
+            xtxt, ytxt = mnz(165.5, -37)
+            ax_nz.text(xtxt, ytxt, 'New Zealand', fontsize=txt_fontsize)
         if alerttime or blindzone or optimalbz:
             if bzreduction or optimalbz:
                 blindzone = True
