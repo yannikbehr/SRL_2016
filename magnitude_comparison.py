@@ -6,9 +6,12 @@ Created on Nov 24, 2014
 @author: behry
 """
 import matplotlib
-matplotlib.use('WXAgg')
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+from matplotlib import rcParams
 from matplotlib.colors import Normalize
+import pandas as pd
+pd.options.display.mpl_style = 'default'
 import numpy as np
 import pyproj
 from collections import defaultdict
@@ -17,6 +20,9 @@ from obspy import UTCDateTime
 import ipdb
 
 txt_fontsize = 16
+rcParams['axes.labelweight'] = 'bold'
+rcParams['axes.labelsize'] = txt_fontsize
+rcParams['figure.subplot.hspace'] = 0.13
 
 class MagComp:
 
@@ -24,11 +30,11 @@ class MagComp:
         self.fig = None
         self.ax = None
         self.debug = False
-        self.fndict = {'Turkey':{'file':'./data/event_list_turkey.csv', 'correction':None},
+        self.fndict = {'Turkey':{'file':'./data/event_list_tr.csv', 'correction':None},
                        'New Zealand':{'file':'./data/event_list_nz.csv', 'correction':None},
                        'Switzerland':{'file':'./data/event_list_ch.csv', 'correction':'%s+0.25'},
-                       'Romania':{'file':'./data/event_list_romania.csv', 'correction':'0.83*((%s-0.8)/0.74)+0.17'},
-                       'Patras':{'file':'./data/event_list_patras.csv', 'correction':None},
+                       'Romania':{'file':'./data/event_list_ro.csv', 'correction':'0.83*((%s-0.8)/0.74)+0.17'},
+                       'Greece':{'file':'./data/event_list_gr.csv', 'correction':None},
                        'Iceland':{'file':'./data/event_list_iceland.csv',
                                   'file_bb':'./data/event_list_iceland_bardarbunga.csv',
                                   'correction':None},
@@ -155,7 +161,7 @@ class MagComp:
                 print "Number of events with location error <= 100: %d" % small_error[0].size
                 print "---> out of these # of events within +-0.5 Ml: %d" % (good[0].size)
             cb = self.fig.colorbar(sc, orientation=cbo, ax=ax,
-                                   aspect=cb_aspect)
+                                   aspect=cb_aspect, pad=0.19)
             cb.set_label("Depth [km]")
         if stats:
             mags, med, ub, lb = self.stats(ml[idx], mvs[idx])
@@ -164,8 +170,16 @@ class MagComp:
             ax.plot(mags, med, ls='-', color='darkgray', lw=3)
             ax.plot(mags, ub, 'k--', lw=3)
             ax.plot(mags, lb, 'k--', lw=3)
-        ax.set_xlabel(r'$M_L$')
-        ax.set_ylabel(r'$M_{VS} - M_L$')
+            med = med[np.where(mags < 6.5)]
+            med = med[~np.ma.masked_invalid(med).mask]
+            ub = ub[np.where(mags < 6.5)]
+            ub = ub[~np.ma.masked_invalid(ub).mask]
+            lb = lb[np.where(mags < 6.5)]
+            lb = lb[~np.ma.masked_invalid(lb).mask]
+            print "Maximum median: %.2f; Minimum median: %.2f" % (med.max(), med.min())
+            print "Minimum lower bound: %.2f; Maximum upper bound: %.2f" % (lb.min(), ub.max())
+        ax.set_xlabel(r'$\mathrm{\mathsf{M}}$')
+        ax.set_ylabel(r'$\mathrm{\mathsf{M_{VS} - M}}$')
         ax.set_xlim(xmin, xmax)
         ax.set_ylim(-2, 2)
         return nevents
@@ -251,10 +265,11 @@ class MagComp:
             maxdep = 300
             ax.text(4.4, 1.1, "# of events: %d" % ndeep, horizontalalignment='left',
                     verticalalignment='center', fontsize=txt_fontsize)
-        ax.text(4.2, 1.5, panelnumber, horizontalalignment='right',
+        ax.text(3.8, 1.5, panelnumber, horizontalalignment='right',
                 verticalalignment='center', fontsize=txt_fontsize)
-        ax.text(4.4, 1.5, txt, horizontalalignment='left',
+        ax.text(4.1, 1.5, txt, horizontalalignment='left',
                 verticalalignment='center', fontsize=txt_fontsize)
+        print txt
         self.plot_mag(ax, allml, allmvs, alldist, alldep, cbo='horizontal',
                       mindep=mindep, maxdep=maxdep)
         print "Number of events: %d" % nevents
@@ -318,7 +333,7 @@ class MagComp:
         # top row
         self.plot_mag_comp(self.ax[6], countryname='Switzerland',
                            panelnumber='a', maxdep=25)
-        self.plot_mag_comp(self.ax[7], countryname='Patras',
+        self.plot_mag_comp(self.ax[7], countryname='Greece',
                            panelnumber='b', maxdep=150)
         self.plot_mag_comp(self.ax[8], countryname='New Zealand',
                            panelnumber='c', maxdep=300)
@@ -331,27 +346,34 @@ class MagComp:
         self.ax[9].set_xlim(0, 1)
         self.ax[9].set_ylim(0, 1)
         self.ax[9].axis('off')
-        self.ax[9].text(0.2, 0.9, 'Location accuracy [km]',
-                        horizontalalignment='center', fontsize=txt_fontsize)
-        self.ax[9].scatter(0.1, 0.2, s=fact / 10, c='white')
-        self.ax[9].text(0.1, 0.5, r'$\geq$ 10',
-                        horizontalalignment='center')
-        self.ax[9].scatter(0.15, 0.2, s=fact / 30.0, c='white')
-        self.ax[9].text(0.15, 0.5, r'30', horizontalalignment='center')
-        self.ax[9].scatter(0.2, 0.2, s=fact / 50, c='white')
-        self.ax[9].text(0.2, 0.5, '50', horizontalalignment='center')
-        self.ax[9].scatter(0.25, 0.2, s=100, c='black', marker='+')
-        self.ax[9].text(0.25, 0.5, r'$\leq$ 100', horizontalalignment='center')
+        self.ax[9].text(0.2, 0.9, 'Location precision [km]',
+                        horizontalalignment='center', fontsize=18)
+        self.ax[9].scatter(0.05, 0.2, s=fact / 10, edgecolors=None, c='white',
+                           facecolors=None)
+        self.ax[9].text(0.05, 0.5, r'$\geq$ 10',
+                        horizontalalignment='center', fontsize=14)
+        self.ax[9].scatter(0.125, 0.2, s=fact / 30.0, c='white', edgecolors=None,
+                           facecolors=None)
+        self.ax[9].text(0.125, 0.5, r'30', horizontalalignment='center',
+                        fontsize=14)
+        self.ax[9].scatter(0.2, 0.2, s=fact / 50, c='white', edgecolors=None,
+                           facecolors=None)
+        self.ax[9].text(0.2, 0.5, '50', horizontalalignment='center',
+                        fontsize=14)
+        self.ax[9].scatter(0.275, 0.2, s=100, c='black', marker='+',
+                           linewidths=1)
+        self.ax[9].text(0.275, 0.5, r'$\leq$ 100', horizontalalignment='center',
+                        fontsize=14)
         self.ax[9].plot([0.5, 0.55, 0.6], [0.8, 0.8, 0.8], ls='-',
                         color='darkgray', lw=3)
-        self.ax[9].text(0.63, 0.8, 'median', horizontalalignment='left',
+        self.ax[9].text(0.63, 0.8, 'Median', horizontalalignment='left',
                         verticalalignment='center', fontsize=txt_fontsize)
         self.ax[9].plot([0.5, 0.55, 0.6], [0.5, 0.5, 0.5], ls='--',
                          color='k', lw=3)
         self.ax[9].text(0.63, 0.5, r'$16^{th}$ and $84^{th}$ percentile',
                         horizontalalignment='left',
                         verticalalignment='center', fontsize=txt_fontsize)
-        self.fig.savefig(fout, dpi=300, bbox_inches='tight')
+        self.fig.savefig(fout, bbox_inches='tight')
 
 #        plt.show()
 
