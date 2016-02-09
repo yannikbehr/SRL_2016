@@ -29,6 +29,18 @@ rcParams['axes.labelsize'] = 14
 rcParams['xtick.labelsize'] = 16
 rcParams['ytick.labelsize'] = 16
 rcParams['axes.facecolor'] = 'white'
+rcParams['xtick.major.size'] = 4
+rcParams['xtick.minor.size'] = 2
+rcParams['xtick.major.pad'] = 4
+rcParams['xtick.minor.pad'] = 4
+rcParams['ytick.major.size'] = 4
+rcParams['ytick.minor.size'] = 2
+rcParams['ytick.major.pad'] = 4
+rcParams['ytick.minor.pad'] = 4
+rcParams['xtick.color'] = 'k'
+rcParams['ytick.color'] = 'k'
+rcParams['ytick.direction'] = 'out'
+rcParams['xtick.direction'] = 'out'
 
 def plot_ptt(datafn, bmap, cmap, dlevel, vmin=0., vmax=15., extend='max'):
     a = np.load(datafn)
