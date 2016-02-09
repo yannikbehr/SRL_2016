@@ -13,7 +13,7 @@ import os
 import sys
 import numpy as np
 import matplotlib
-matplotlib.use('WXAgg')
+matplotlib.use('wxAgg')
 import wx
 import matplotlib.pyplot as plt
 from matplotlib.colorbar import ColorbarBase
@@ -21,11 +21,14 @@ from matplotlib.colors import Normalize, LogNorm
 from matplotlib.pyplot import cm
 from matplotlib import rcParams
 from mpl_toolkits.basemap import Basemap
+import pandas as pd
+pd.options.display.mpl_style = 'default'
 import ipdb
 
 rcParams['axes.labelsize'] = 14
-rcParams['xtick.labelsize'] = 14
-rcParams['ytick.labelsize'] = 14
+rcParams['xtick.labelsize'] = 16
+rcParams['ytick.labelsize'] = 16
+rcParams['axes.facecolor'] = 'white'
 
 def plot_ptt(datafn, bmap, cmap, dlevel, vmin=0., vmax=15., extend='max'):
     a = np.load(datafn)
@@ -84,7 +87,7 @@ def plot_at(datafn, bmap, cmap, vmin=0., vmax=15., extend='neither',
     x, y = bmap(lon, lat)
     bmap.scatter(x, y, c=at, cmap=cmap, s=ssize,
                  norm=LogNorm(vmin=vmin, vmax=vmax), zorder=1,
-                 linewidths=0)
+                 edgecolor='')
 #                 norm=Normalize(vmin=vmin, vmax=vmax), zorder=1,
 
 
@@ -101,7 +104,7 @@ def main(traveltime=False, alerttime=False, blindzone=False,
     extend = 'max'
     dlevel = 0.5
     datadir = './data/'
-    lbl_fontsize = 12
+    lbl_fontsize = 16
 
     cb_label = []
     if traveltime:
@@ -245,7 +248,7 @@ def main(traveltime=False, alerttime=False, blindzone=False,
     # add a panel for California
     if True:
         # ax_cal = fig.add_axes([0.62, 0., .31, 1.0])
-        ax_cal = fig.add_axes([0.5, 0.54, .45, .35])
+        ax_cal = fig.add_axes([0.5, 0.53, .45, .35])
         mca = Basemap(width=700000, height=750000,
                     resolution='l', projection='aea', \
                     lat_1=31, lat_2=38., lon_0=-117.5, lat_0=34.5,
@@ -287,7 +290,7 @@ def main(traveltime=False, alerttime=False, blindzone=False,
                     ax=ax_ice)
         mi.drawcoastlines(zorder=2)
         mi.fillcontinents(color=darkgray, zorder=0)
-        mi.drawmeridians(np.arange(-26, -12, 4), labels=[0, 0, 1, 0],
+        mi.drawmeridians(np.arange(-26, -12, 5), labels=[0, 0, 1, 0],
                         color='lightgray', linewidth=0.5, zorder=0,
                         fontsize=lbl_fontsize)
         mi.drawparallels(np.arange(60, 70, 2), labels=[0, 1, 0, 0],
@@ -318,7 +321,7 @@ def main(traveltime=False, alerttime=False, blindzone=False,
                     ax=ax_nz)
         mnz.drawcoastlines(zorder=2)
         mnz.fillcontinents(color=darkgray, zorder=0)
-        mnz.drawmeridians(np.arange(164, 182, 4), labels=[0, 0, 0, 1],
+        mnz.drawmeridians(np.arange(164, 182, 6), labels=[0, 0, 0, 1],
                         color='lightgray', linewidth=0.5, zorder=0,
                         fontsize=lbl_fontsize)
         mnz.drawparallels(np.arange(-51, -31, 2), labels=[1, 0, 0, 0],
@@ -397,7 +400,7 @@ def main(traveltime=False, alerttime=False, blindzone=False,
         cb2.set_ticklabels([int(x / 6.5 + 0.5) for x in ticks])
         cb2.ax.tick_params(labelsize=lbl_fontsize)
 
-    fig.savefig(fout, dpi=300, bbox_inches='tight')
+    fig.savefig(fout, bbox_inches='tight')
     plt.show()
 
 def station_distance(traveltime, depth, vp, nst):
@@ -426,5 +429,6 @@ def damage_zone(intensity=6):
         idx = np.where(I >= intensity)
         dz.append(Rhyp[idx][-1])
     return (mags, dz)
+
 if __name__ == '__main__':
-    main(blindzone=True)
+    main(traveltime=True)
