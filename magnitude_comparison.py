@@ -22,7 +22,7 @@ import ipdb
 txt_fontsize = 16
 rcParams['axes.labelweight'] = 'bold'
 rcParams['axes.labelsize'] = txt_fontsize
-rcParams['figure.subplot.hspace'] = 0.13
+rcParams['figure.subplot.hspace'] = 0.1
 
 class MagComp:
 
@@ -79,9 +79,9 @@ class MagComp:
         self.ax = []
         vmargin = 0.7 / width
         hmargin = 1.0 / width
-        vpad = 0.5 / height
+        vpad = 0.25 / height
         shpad = 0.6 / width
-        hpad = 0.5 / width
+        hpad = 0.3 / width
         spht = 3.2 / height
         spwd = 5.7 / width
         bpht = 3.5 / height
@@ -127,7 +127,7 @@ class MagComp:
 
         # legend box
         x = 3.6 / width
-        y = -0.36 / height
+        y = 0.
         w = 9.0 / width
         h = 0.9 / height
         self.ax.append(self.fig.add_axes((x, y, w, h)))
