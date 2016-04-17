@@ -390,7 +390,7 @@ def main(traveltime=False, alerttime=False, blindzone=False,
                            orientation='vertical', extend=extend)
         tklbl = []
         for _bz in ticks:
-            idx = np.argmin(np.abs(dz - _bz))
+            idx = np.argmin(np.abs(dz - np.sqrt(_bz * _bz + 64)))
             tklbl.append(mags[idx])
         cb3.set_label(cb_label[2], fontsize=cb_fontsize, labelpad=lbl_pad)
         cb3.set_ticks(ticks)
@@ -443,4 +443,4 @@ def damage_zone(intensity=6):
     return (mags, dz)
 
 if __name__ == '__main__':
-    main(traveltime=True)
+    main(optimalbz=True)
