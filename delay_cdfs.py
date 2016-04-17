@@ -42,7 +42,7 @@ for _k in ['Southern California', 'Switzerland', 'New Zealand', 'Romania', 'Gree
         data.extend(_del)
     data = np.array(data)
     if _k == 'New Zealand':
-        data -= 6.0
+        data -= 8.0
     dmin = data.min()
     dmax = data.max()
     if dmin >= binmin and dmax <= binmax:
@@ -56,14 +56,15 @@ for _k in ['Southern California', 'Switzerland', 'New Zealand', 'Romania', 'Gree
 
     if bw:
         hist, edges = np.histogram(data, bins=bins, density=False)
-        x = edges[0:-1] + np.diff(edges)
+        x = edges[0:-1] + np.diff(edges) / 2.
         y = np.cumsum(hist.astype(float)) / np.sum(hist)
-        if _m in ['-', '--', '-.', ':']:
-            ax.plot(x, y, color='k', linestyle=_m)
-            lines.append(plt.Line2D([], [], lw=2.0, linestyle=_m, color='k'))
+        if _m in ['-', '--', '-.']:
+            ax.plot(x, y, color='k', linestyle=_m, lw=1.5)
+            lines.append(plt.Line2D([], [], lw=1.5, linestyle=_m, color='k'))
         else:
-            ax.plot(x, y, color='k', marker=_m)
-            lines.append(plt.Line2D([], [], lw=2.0, marker=_m, color='k'))
+            ax.plot(x, y, color='k', marker=_m, linestyle='-', lw=0.3)
+            lines.append(plt.Line2D([], [], lw=0.3, marker=_m, color='k',
+                                    linestyle='-'))
     else:
         ax.hist(data, cumulative=True, bins=bins, normed=True,
                 histtype='step', color=_cl)
