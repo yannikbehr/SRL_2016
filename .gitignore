@@ -1,0 +1,8 @@
+plots/
+data/
+manuscript/
+*.pyc
+.project
+.pydevproject
+.ipynb_checkpoints/
+*~

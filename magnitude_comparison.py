@@ -6,7 +6,7 @@ Created on Nov 24, 2014
 @author: behry
 """
 import matplotlib
-matplotlib.use('Agg')
+matplotlib.use('WxAgg')
 import matplotlib.pyplot as plt
 from matplotlib import rcParams
 from matplotlib.colors import Normalize
@@ -308,7 +308,7 @@ class MagComp:
                         linewidths=1.0, alpha=0.5)
 
 
-    def plot(self, fout):
+    def plot(self, fout=None):
         # middle row
         self.plot_mag_comp(self.ax[3], countryname='Turkey', panelnumber='d',
                            maxdep=25)
@@ -373,7 +373,8 @@ class MagComp:
         self.ax[9].text(0.63, 0.5, r'$16^{th}$ and $84^{th}$ percentile',
                         horizontalalignment='left',
                         verticalalignment='center', fontsize=txt_fontsize)
-        self.fig.savefig(fout, bbox_inches='tight')
+        if fout is not None:
+            self.fig.savefig(fout, bbox_inches='tight')
 
 #        plt.show()
 
