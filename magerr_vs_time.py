@@ -11,7 +11,6 @@ import numpy as np
 import pyproj
 from collections import defaultdict
 from scipy.stats import scoreatpercentile
-import ipdb
 
 txt_fontsize = 14
 

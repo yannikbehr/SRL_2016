@@ -23,7 +23,6 @@ from scipy.stats import scoreatpercentile
 from copy import copy
 import warnings
 import pyproj
-import ipdb
 
 
 class AlertTimeMap:

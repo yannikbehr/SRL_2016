@@ -17,7 +17,6 @@ import pyproj
 from collections import defaultdict
 from scipy.stats import scoreatpercentile
 from obspy import UTCDateTime
-import ipdb
 
 txt_fontsize = 16
 rcParams['axes.labelweight'] = 'bold'

@@ -23,7 +23,7 @@ from matplotlib import rcParams
 from mpl_toolkits.basemap import Basemap
 import pandas as pd
 pd.options.display.mpl_style = 'default'
-import ipdb
+
 
 rcParams['axes.labelsize'] = 14
 rcParams['xtick.labelsize'] = 16
@@ -204,7 +204,7 @@ def main(traveltime=False, alerttime=False, blindzone=False,
                     horizontalalignment='center')
 
             # plot Greek data
-            resultsfn = os.path.join(datadir, 'p_wave_tt_gr.npz')
+            resultsfn = os.path.join(datadir, 'ptt_gr_6stations.npz')
             plot_ptt(resultsfn, m, cmap, dlevel, vmax=vmax)
             xtxt, ytxt = m(19.5, 36.5)
             ax.text(xtxt, ytxt, 'Greece', fontsize=txt_fontsize,
@@ -219,7 +219,7 @@ def main(traveltime=False, alerttime=False, blindzone=False,
                     horizontalalignment='center')
 
             # plot Turkish data
-            resultsfn = os.path.join(datadir, 'ptt_koeri_6stations.npz')
+            resultsfn = os.path.join(datadir, 'ptt_tr_6stations.npz')
             plot_ptt(resultsfn, m, cmap, dlevel, vmax=vmax)
             xtxt, ytxt = m(34.5, 39.5)
             ax.text(xtxt, ytxt, 'Turkey', fontsize=txt_fontsize,
@@ -310,7 +310,7 @@ def main(traveltime=False, alerttime=False, blindzone=False,
                         fontsize=lbl_fontsize)
         # plot Iceland data
         if traveltime:
-            resultsfn = os.path.join(datadir, 'ptt_imo_6stations.npz')
+            resultsfn = os.path.join(datadir, 'ptt_is_6stations.npz')
             plot_ptt(resultsfn, mi, cmap, dlevel, vmin=vmin, vmax=vmax)
             xtxt, ytxt = mi(-23.5, 67)
             ax_ice.text(xtxt, ytxt, 'Iceland', fontsize=txt_fontsize)
@@ -341,7 +341,7 @@ def main(traveltime=False, alerttime=False, blindzone=False,
                         fontsize=lbl_fontsize)
         # plot NZ data
         if traveltime:
-            resultsfn = os.path.join(datadir, 'p_wave_tt_nz.npz')
+            resultsfn = os.path.join(datadir, 'ptt_nz_6stations.npz')
             plot_ptt(resultsfn, mnz, cmap, dlevel, vmin=vmin, vmax=vmax)
             xtxt, ytxt = mnz(165.5, -37)
             ax_nz.text(xtxt, ytxt, 'New Zealand', fontsize=txt_fontsize)
